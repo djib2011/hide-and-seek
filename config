@@ -16,8 +16,8 @@
 
 [animals]
     data_dir = /home/thanos/animals
-    hider_weights = weights/animals/hider/weights.h5
-    image_size = 196
+    hider_weights = weights/animals/hider/final_weights.h5
+    image_size = 192
     channels = 3
     train_images = 396416
     test_images = 114114
@@ -25,7 +25,7 @@
     max_epochs = 10
     batch_size = 64
     gpu = 0
-    model = hns_renset
+    model = hns_resnet
 
 [mnist]
     hider_weights = weights/mnist/hider/final/final_weights.h5

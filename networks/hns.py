@@ -147,8 +147,10 @@ def hide_and_seek_resnet(input_shape, num_classes, binary_type='deterministic', 
     # Connection layer
     masked_img = inp * binary
 
-    res = tf.keras.applications.resnet50.ResNet50(input_shape=input_shape)(masked_img)
-    out = tf.keras.layers.Dense(num_classes, activation='softmax', name='seeker_output')(res.output[-2])
+    # ResNet50 classifier with new top layer
+    resn = tf.keras.applications.resnet50.ResNet50(input_shape=input_shape, include_top=False, weights=None)(masked_img)
+    flat2 = tf.keras.layers.Flatten()(resn)
+    out = tf.keras.layers.Dense(num_classes, activation='softmax', name='seeker_output')(flat2)
 
     model = tf.keras.models.Model(inputs=[inp], outputs={'seeker_output': out,
                                                          'hider_output': binary})
@@ -176,4 +178,11 @@ if __name__ == '__main__':
     # for animals
     input_shape = (192, 192, 3)
     num_classes = 398
-    model = hide_and_seek_large(input_shape, num_classes)
+
+    # large
+    # model = hide_and_seek_large(input_shape, num_classes)
+
+    # resnet
+    model = hide_and_seek_resnet(input_shape, num_classes)
+
+    model.summary()

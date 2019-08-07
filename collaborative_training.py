@@ -150,7 +150,7 @@ class HNSTrainer:
                 if (time.time() - last_update) >= update_every * 3600:
                     last_update = time.time()
                     print('\n  [Model has been successfully training for {:.1f} hours.'
-                          'Currently at step {} of {}, in epoch {}]'.format((last_update - start_time)/3600,
+                          'Currently at step {} of {}, in epoch {}]'.format((last_update - start_time) / 3600,
                                                                             i+1, training_steps, epoch+1))
 
             avg = epoch_loss_avg.result()
@@ -246,7 +246,7 @@ if __name__ == '__main__':
     alpha = config['alpha']
     monitor = config['monitor']
     patience = config['patience']
-    slope_increase_rate = config['rate']
+    slope_increase_rate = config['rate_per_iteration']
     adaptive = alpha is None
 
     # training configurations
@@ -269,8 +269,15 @@ if __name__ == '__main__':
         train_set = utils.datagen.image_generator(data_dir / 'train',batch_size=batch_size, image_shape=image_shape, channels=channels)
         test_set = utils.datagen.image_generator(data_dir / 'test', batch_size=batch_size, image_shape=image_shape, channels=channels)
 
-    log_dir = str(Path('logs') / config['config'] / 'hns' / identifier)
-    weight_dir = str(Path('weights') / config['config'] / 'hns' / identifier)
+    sub_dirs = Path(config['config']) / 'hns' / binary_type
+
+    if binary_type == 'stochastic':
+        sub_dirs = sub_dirs / stochastic_estimator
+        if stochastic_estimator == 'sa':
+            sub_dirs = sub_dirs / 'rate_{}'.format(str(config['rate']))
+
+    log_dir = str(Path('logs') / sub_dirs / identifier)
+    weight_dir = str(Path('weights') / sub_dirs / identifier)
 
     print('Initializing Hide-and-Seek model')
     hns_model = networks.hns.available_models[model_id](input_shape, num_classes, binary_type=binary_type,

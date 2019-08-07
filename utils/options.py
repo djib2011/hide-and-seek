@@ -77,7 +77,7 @@ args = vars(opt)
 defaults = {'batch_size': 64, 'max_epochs': 10, 'gpu': 0, 'model': 'hns_small', 'config': None, 'data_dir': None,
             'image_size': None, 'channels': None, 'num_classes': None, 'hider_weights': None, 'seeker_weights': None,
             'train_images': None, 'test_images': None, 'stochastic': True, 'estimator': 'st1', 'patience': 100,
-            'alpha': None, 'monitor': 'classification', 'slope_increase_rate': 0.5}
+            'alpha': None, 'monitor': 'classification', 'rate': 0.5}
 
 
 def parse_config():
@@ -164,7 +164,7 @@ else:
     config['binary_type'] = 'deterministic'
 
 # Re-adjust the slope from the human-friendly "per epoch", to the "per iteration" that is needed
-config['rate'] = config['rate'] / config['train_images']
+config['rate_per_iteration'] = config['rate'] / config['train_images']
 
 # Print final form of configuration file 
 print('\n{:<15} | {}'.format('Argument', 'Value'))
