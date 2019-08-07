@@ -1,0 +1,40 @@
+# Configuration file for presetting options for different datasets
+
+[example]
+    data_dir = /path/to/data/dir                      # directory where data is located
+    hider_weights = /path/to/hider/weights.h5         # path to a valid "hider" model weights file
+    seeker_weights = /path/to/seeker/weights.h5       # path to a valid "seeker" model weights file
+    image_size = 256                                  # desired image dimensions: images will be resized to (256, 256)
+    channels = 3                                      # number of channels (3 for RGB, 1 for grayscale)
+    train_images = 10000                              # number of images in the training set (optional but recommended)
+    test_images = 5000                                # number of images in the test set (optional but recommended)
+    num_classes = 13                                  # number of classes (optional but recommended)
+    max_epochs = 13                                   # maximum number of epochs to train the model
+    batch_size = 64                                   # what batch size to use
+    gpu = 1                                           # which gpu to use to train the model (for multi-gpu environments)
+    model = hns_large                                 # select size of model to use, 'small' and 'large' available
+
+[animals]
+    data_dir = /home/thanos/animals
+    hider_weights = weights/animals/hider/weights.h5
+    image_size = 196
+    channels = 3
+    train_images = 396416
+    test_images = 114114
+    num_classes = 398
+    max_epochs = 10
+    batch_size = 64
+    gpu = 0
+    model = hns_renset
+
+[mnist]
+    hider_weights = weights/mnist/hider/final/final_weights.h5
+    image_size = 28
+    channels = 1
+    train_images = 50000
+    test_images = 10000
+    num_classes = 10
+    max_epochs = 10
+    batch_size = 256
+    gpu = 0
+    model = hns_small
