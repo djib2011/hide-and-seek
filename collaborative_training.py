@@ -14,7 +14,7 @@ import networks
 
 class HNSTrainer:
 
-    def __init__(self, model, weight_dir='weights', log_dir='logs', optimizer=None, loss_function=None, debug=debug):
+    def __init__(self, model, weight_dir='weights', log_dir='logs', optimizer=None, loss_function=None, debug=False):
 
         self.model = model
 

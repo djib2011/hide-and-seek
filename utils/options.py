@@ -63,12 +63,10 @@ parser.add_argument('--batch_size', type=int, default=None, help='Batch size')
 parser.add_argument('--max_epochs', type=int, default=None, help='Maximum number of epochs. Adaptive loss weighting may'
                                                                  ' cause the network to converge faster.')
 parser.add_argument('--gpu', type=str, default=None, help='Which gpu to use. Only relevant for multi-gpu enviromnemts.')
-parser.add_argument('--debug', action='store_true', default=False, help='If set to True, no weights or logs'
-                                                                                  'will be stored for the models. It is'
-                                                                                  'intended for seeing if a script runs'
-                                                                                  'properly, without generating empty'
-                                                                                  'logs or useless weights.')
-
+parser.add_argument('--debug', action='store_true', default=False, help='If set to True, no weights or logs will be '
+                                                                        'stored for the models. It is intended for '
+                                                                        'seeing if a script runs properly, without '
+                                                                        'generating empty logs or useless weights.')
 
 if hasattr(__main__, '__file__'):
     opt = parser.parse_args()
@@ -139,7 +137,6 @@ else:
     print('Using custom configuration')
     args = {k: args[k] if args[k] is not None else defaults[k] for k in args}
 
-
 # Check for valid arguemnts
 config = args.copy()
 if config['data_dir']:
@@ -163,13 +160,11 @@ if not config['test_images']:
     print('Searching for test set images...')
     config['test_images'] = find_images(Path(config['data_dir']).absolute() / 'test')
 
-if config['stochastic']:
-    config['binary_type'] = 'stochastic'
-else:
-    config['binary_type'] = 'deterministic'
-
-# Re-adjust the slope from the human-friendly "per epoch", to the "per iteration" that is needed
-config['rate_per_iteration'] = config['rate'] / config['train_images']
+if config['debug']:
+    print('\n' + '-'*55)
+    print('            WARNING! "debug" mode is set.')
+    print('            won\'t store weights or logs.')
+    print('-'*55 + '\n')
 
 # Print final form of configuration file 
 print('\n{:<20} | {}'.format('Argument', 'Value'))
@@ -177,5 +172,14 @@ print('-'*55)
 for k, v in sorted(config.items()):
     if not k in('identifier', 'config'):
         print('{:<20} | {}'.format(k, v))
+
+# Make another variable dependent on "stochastic"
+if config['stochastic']:
+    config['binary_type'] = 'stochastic'
+else:
+    config['binary_type'] = 'deterministic'
+
+# Re-adjust the slope from the human-friendly "per epoch", to the "per iteration" that is needed
+config['rate_per_iteration'] = config['rate'] / config['train_images']
 
 print('\n'*5)
