@@ -14,7 +14,7 @@ def hider_small(input_shape=(28, 28, 1)):
     res = tf.keras.layers.Reshape((input_shape[0] // 4, input_shape[0] // 4, 16))(de0)
     de1 = tf.keras.layers.Conv2DTranspose(8, kernel_size=(4, 4), strides=(2, 2), activation='relu', padding='same')(res)
     de2 = tf.keras.layers.Conv2DTranspose(4, kernel_size=(4, 4), strides=(2, 2), activation='relu', padding='same')(de1)
-    decoded = tf.keras.layers.Conv2D(1, (1, 1), activation='sigmoid')(de2)
+    decoded = tf.keras.layers.Conv2D(input_shape[-1], (1, 1), activation='sigmoid')(de2)
     model = tf.keras.models.Model(inputs=[inp], outputs=[decoded])
     return model
 
@@ -33,7 +33,7 @@ def autoencoder_small_old(input_shape=(28, 28, 1)):
     res = tf.keras.layers.Reshape((7, 7, 16))(de0)
     de1 = tf.keras.layers.Conv2DTranspose(8, kernel_size=(4, 4), strides=(2, 2), activation='relu', padding='same')(res)
     de2 = tf.keras.layers.Conv2DTranspose(4, kernel_size=(4, 4), strides=(2, 2), activation='relu', padding='same')(de1)
-    decoded = tf.keras.layers.Conv2D(1, (1, 1), activation='sigmoid')(de2)
+    decoded = tf.keras.layers.Conv2D(input_shape[-1], (1, 1), activation='sigmoid')(de2)
 
     model = tf.keras.models.Model(inputs=[inp], outputs=[decoded])
 

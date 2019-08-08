@@ -12,19 +12,21 @@ import networks
 
 class HiderTrainer:
 
-    def __init__(self, model, weight_dir='weights', log_dir='logs', optimizer=None, loss_function=None):
+    def __init__(self, model, weight_dir='weights', log_dir='logs', optimizer=None, loss_function=None, debug=False):
 
         self.model = model
 
-        self.weight_dir = weight_dir
-        if not Path(weight_dir).is_dir():
-            os.makedirs(weight_dir)
+        if not debug:
+            self.weight_dir = weight_dir
+            if not Path(weight_dir).is_dir():
+                os.makedirs(weight_dir)
 
-        self.log_dir = log_dir
-        if not Path(log_dir).is_dir():
-            os.makedirs(log_dir)
-        self.train_summary_writer = tf.summary.create_file_writer(log_dir + '/batch')
-        self.epoch_summary_writer = tf.summary.create_file_writer(log_dir + '/epoch')
+            self.log_dir = log_dir
+            if not Path(log_dir).is_dir():
+                os.makedirs(log_dir)
+            self.train_summary_writer = tf.summary.create_file_writer(log_dir + '/batch')
+            self.epoch_summary_writer = tf.summary.create_file_writer(log_dir + '/epoch')
+        self.debug = debug
 
         if optimizer:
             self.optimizer = optimizer
@@ -47,8 +49,9 @@ class HiderTrainer:
 
         reconstruction_loss = self.loss_function(y_true=x, y_pred=y_)
 
-        with self.train_summary_writer.as_default():
-            tf.summary.scalar('reconstruction loss', reconstruction_loss, step=self.iteration)
+        if not self.debug:
+            with self.train_summary_writer.as_default():
+                tf.summary.scalar('reconstruction loss', reconstruction_loss, step=self.iteration)
 
         return reconstruction_loss
 
@@ -61,8 +64,9 @@ class HiderTrainer:
 
         total_grad = np.abs(np.concatenate([g.numpy().flatten() for g in grads], axis=0)).sum()
 
-        with self.train_summary_writer.as_default():
-            tf.summary.scalar('gradients', total_grad, step=self.iteration)
+        if not self.debug:
+            with self.train_summary_writer.as_default():
+                tf.summary.scalar('gradients', total_grad, step=self.iteration)
 
         self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
 
@@ -88,16 +92,18 @@ class HiderTrainer:
 
             avg = epoch_loss_avg.result()
 
-            with self.epoch_summary_writer.as_default():
-                tf.summary.scalar('Average loss per epoch', avg, step=epoch+1)
+            if not self.debug:
+                with self.epoch_summary_writer.as_default():
+                    tf.summary.scalar('Average loss per epoch', avg, step=epoch+1)
             self.epoch_loss.append(avg)
 
             print('Epoch {}: Training Loss: {:.3f}'.format(epoch+1, avg))
 
             if test_data:
                 val_loss = self.evaluate(test_data, validation_steps)
-                with self.epoch_summary_writer.as_default():
-                    tf.summary.scalar('Validation loss', val_loss, step=epoch+1)
+                if not self.debug:
+                    with self.epoch_summary_writer.as_default():
+                        tf.summary.scalar('Validation loss', val_loss, step=epoch+1)
                 self.validation_loss.append(val_loss)
                 print('Validation loss: {:.3f}%'.format(val_loss))
 
@@ -146,10 +152,10 @@ if __name__ == '__main__':
             print('No valid hider weights found at:', config['hider_weights'])
             print('Will train hider from skratch.')
 
-
     # training configurations
     max_epochs = config['max_epochs']
     batch_size = config['batch_size']
+    debug = config['debug']
 
     # Data configurations
     image_shape = (config['image_size'], ) * 2
@@ -162,6 +168,9 @@ if __name__ == '__main__':
     if config['config'] == 'mnist':
         train_set = utils.datagen.mnist_train(batch_size=batch_size)
         test_set = utils.datagen.mnist_test(batch_size=batch_size)
+    elif config['config'] == 'cifar10':
+        train_set = utils.datagen.cifar10(batch_size=batch_size, set='train', channels=channels)
+        test_set = utils.datagen.cifar10(batch_size=batch_size, set='test', channels=channels)
     else:
         data_dir = Path(config['data_dir'])
         train_set = utils.datagen.image_generator(data_dir / 'train',batch_size=batch_size, image_shape=image_shape, channels=channels)
@@ -177,14 +186,15 @@ if __name__ == '__main__':
         print('Loading pre-trained weights')
         hider.load_weights(pretrained_hider_weights)
 
-    hider_trainer = HiderTrainer(model=hider, weight_dir=weight_dir, log_dir=log_dir)
+    hider_trainer = HiderTrainer(model=hider, weight_dir=weight_dir, log_dir=log_dir, debug=debug)
 
     print('Training hider for {} epochs.'.format(max_epochs))
-    with utils.training.WeightFailsafe(weight_dir, hider):
+    with utils.training.WeightFailsafe(weight_dir, hider, debug=debug):
         hider_trainer.train(train_set, training_steps=train_images//batch_size,  max_epochs=max_epochs,
                             test_data=test_set, validation_steps=test_images//batch_size)
 
     print('Test set loss: {:.3f}%'.format(hider_trainer.evaluate(test_set, test_images//batch_size)))
 
-    print('Saving model to:', weight_dir)
-    hider.save_weights(weight_dir + '/final_weights.h5')
+    if not debug:
+        print('Saving model to:', weight_dir)
+        hider.save_weights(weight_dir + '/final_weights.h5')

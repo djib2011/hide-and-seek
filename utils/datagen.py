@@ -4,27 +4,53 @@ import numpy as np
 
 
 def image_generator(data_dir, batch_size=128, image_shape=(192, 192), channels=3):
+    """
+    Generator that loads images and processes images from the disk. Requires the data to be structured as in the keras
+    ImageDataGenerator (ImageNet format), i.e. data_dir should contain subdirectories of the classes, each containing
+    the images belonging to its respective class. Also resizes the images to the desired dimension.
+    Currently, only works for JPEG images.
+    :param data_dir: Directory containing class subdirectories with the images.
+    :param batch_size: Desired batch size.
+    :param image_shape: A tuple containing the resolution the images will be resized to.
+    :param channels: Number of channels we want to load from the images (3 for RGB, 1 for grayscale).
+    :return: a tf.data.Dataset that loads and processes the images in data_dir.
+    """
 
-    def preprocess_image(image, channels=image_shape, image_shape=image_shape):
+    def preprocess_image(image, channels=channels, image_shape=image_shape):
+        """
+        Function that opens a JPEG image, resizes it and rescales it to [0, 1]
+        :param image: A path for a JPEG image.
+        :param channels: The number of channels in the image (3 for RGB, 1 for grayscale)
+        :param image_shape: The desired resolution that we're going to resize the image to
+        :return: a np.array containing the processed image
+        """
         image = tf.image.decode_jpeg(image, channels=channels)
         image = tf.image.resize(image, image_shape)
-        image /= 255.0  # normalize to [0,1] range
+        image /= 255.0
         return image
 
     def load_and_preprocess_image(image_path, image_label, channels=channels, image_shape=image_shape):
+        """
+        Function that loads and processes a JPEG image. Label is not modified at all.
+        :param image: A path for a JPEG image.
+        :param channels: The number of channels in the image (3 for RGB, 1 for grayscale)
+        :param image_shape: The desired resolution that we're going to resize the image to
+        :return: The loaded and processed image in a np.array and the label
+        """
         image = tf.io.read_file(image_path)
         return preprocess_image(image, channels=channels, image_shape=image_shape), image_label
 
+    # List of classes
     class_names = sorted([x.name for x in Path(data_dir).glob('*') if x.is_dir()])
 
-    # list of paths to images
+    # List of paths to images
     images = [str(x) for x in Path(data_dir).rglob('*.JPEG')]
 
-    # one-hot encoded labels
+    # One-hot encoded labels
     classes = [class_names.index(x.split('/')[-2]) for x in images]
     labels = tf.keras.utils.to_categorical(classes, len(class_names))
 
-    # tensorflow dataset
+    # Tensorflow dataset
     data = tf.data.Dataset.from_tensor_slices((images, labels))
     data = data.shuffle(buffer_size=len(images))
     data = data.map(load_and_preprocess_image)
@@ -35,23 +61,33 @@ def image_generator(data_dir, batch_size=128, image_shape=(192, 192), channels=3
     return data
 
 
-def mnist_train(batch_size=64, multi_input=False):
+def mnist(batch_size=64, set='train'):
+    """
+    Generator that loads the mnist dataset.
+    :param batch_size: The desired batch size.
+    :param set: Which set to load, "train" or "test".
+    :return: a tf.data.Dataset that generates mnist images
+    """
 
-    (train_images, train_labels), (_, _) = tf.keras.datasets.mnist.load_data()
-
-    train_images = train_images.reshape((60000, 28, 28, 1)).astype(np.float32)
+    # Load train/test set images
+    if set == 'train':
+        (images, labels), (_, _) = tf.keras.datasets.mnist.load_data()
+        images = images.reshape((60000, 28, 28, 1))
+    elif set == 'test':
+        (_, _), (images, labels) = tf.keras.datasets.mnist.load_data()
+        images = images.reshape((10000, 28, 28, 1))
+    else:
+        raise ValueError('Invalid value for argument "set". Should be either "train" or "test".')
 
     # Normalize pixel values to be between 0 and 1
-    train_images = train_images / 255.0
+    images = images.astype(np.float32) / 255.0
 
-    train_labels = tf.keras.utils.to_categorical(train_labels, len(np.unique(train_labels)))
+    # One-hot encode the labels
+    labels = tf.keras.utils.to_categorical(labels, 10)
 
-    if multi_input:
-        data = tf.data.Dataset.from_tensor_slices((train_images, train_images, train_labels))
-    else:
-        data = tf.data.Dataset.from_tensor_slices((train_images, train_labels))
-
-    data = data.shuffle(buffer_size=len(train_images))
+    # Create tf.Dataset
+    data = tf.data.Dataset.from_tensor_slices((images, labels))
+    data = data.shuffle(buffer_size=len(images))
     data = data.repeat()
     data = data.batch(batch_size=batch_size)
     data = data.prefetch(buffer_size=1)
@@ -59,27 +95,37 @@ def mnist_train(batch_size=64, multi_input=False):
     return data
 
 
-def mnist_test(batch_size=64, multi_input=False):
+def cifar10(batch_size=64, set='train', channels=3):
+    """
+    Generator that loads the cifar10 dataset.
+    :param batch_size: The desired batch size.
+    :param set: Which set to load, "train" or "test".
+    :param channels: How many channels do we want the image to have (3 for RGB, 1 for grayscale)
+    :return: a tf.data.Dataset that generates cifar10 images
+    """
 
-    (_, _), (test_images, test_labels) = tf.keras.datasets.mnist.load_data()
+    # Load train/test set images
+    if set == 'train':
+        (images, labels), (_, _) = tf.keras.datasets.cifar10.load_data()
+    elif set == 'test':
+        (_, _), (images, labels) = tf.keras.datasets.cifar10.load_data()
+    else:
+        raise ValueError('Invalid value for argument "set". Should be either "train" or "test".')
 
-    test_images = test_images.reshape((10000, 28, 28, 1)).astype(np.float32)
+    if channels == 1:
+        images = np.expand_dims(images.mean(axis=-1), axis=-1)
 
     # Normalize pixel values to be between 0 and 1
-    test_images = test_images / 255.0
+    images = images.astype(np.float32) / 255.
 
-    test_labels = tf.keras.utils.to_categorical(test_labels, len(np.unique(test_labels)))
+    # One-hot encode the labels
+    labels = tf.keras.utils.to_categorical(labels, 10)
 
-    if multi_input:
-        data = tf.data.Dataset.from_tensor_slices((test_images, test_images, test_labels))
-    else:
-        data = tf.data.Dataset.from_tensor_slices((test_images, test_labels))
-
-    data = data.shuffle(buffer_size=len(test_images))
+    # Create tf.Dataset
+    data = tf.data.Dataset.from_tensor_slices((images, labels))
+    data = data.shuffle(buffer_size=len(images))
     data = data.repeat()
     data = data.batch(batch_size=batch_size)
     data = data.prefetch(buffer_size=1)
 
     return data
-
-

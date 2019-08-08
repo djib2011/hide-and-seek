@@ -13,20 +13,22 @@ import networks
 
 class SeekerTrainer:
 
-    def __init__(self, model, weight_dir='weights', log_dir='logs', optimizer=None, loss_function=None):
+    def __init__(self, model, weight_dir='weights', log_dir='logs', optimizer=None, loss_function=None, debug=False):
 
 
         self.model = model
+        self.debug = debug
 
-        self.weight_dir = weight_dir
-        if not Path(weight_dir).is_dir():
-            os.makedirs(weight_dir)
+        if not debug:
+            self.weight_dir = weight_dir
+            if not Path(weight_dir).is_dir():
+                os.makedirs(weight_dir)
 
-        self.log_dir = log_dir
-        if not Path(log_dir).is_dir():
-            os.makedirs(log_dir)
-        self.train_summary_writer = tf.summary.create_file_writer(log_dir + '/batch')
-        self.epoch_summary_writer = tf.summary.create_file_writer(log_dir + '/epoch')
+            self.log_dir = log_dir
+            if not Path(log_dir).is_dir():
+                os.makedirs(log_dir)
+            self.train_summary_writer = tf.summary.create_file_writer(log_dir + '/batch')
+            self.epoch_summary_writer = tf.summary.create_file_writer(log_dir + '/epoch')
 
         if optimizer:
             self.optimizer = optimizer
@@ -50,8 +52,9 @@ class SeekerTrainer:
 
         classification_loss = self.loss_function(y_true=y, y_pred=y_)
 
-        with self.train_summary_writer.as_default():
-            tf.summary.scalar('training loss', classification_loss, step=self.iteration)
+        if not self.debug:
+            with self.train_summary_writer.as_default():
+                tf.summary.scalar('training loss', classification_loss, step=self.iteration)
 
         return classification_loss
 
@@ -64,8 +67,9 @@ class SeekerTrainer:
 
         total_grad = np.abs(np.concatenate([g.numpy().flatten() for g in grads], axis=0)).sum()
 
-        with self.train_summary_writer.as_default():
-            tf.summary.scalar('gradients', total_grad, step=self.iteration)
+        if not debug:
+            with self.train_summary_writer.as_default():
+                tf.summary.scalar('gradients', total_grad, step=self.iteration)
 
         self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
 
@@ -99,16 +103,18 @@ class SeekerTrainer:
 
             avg = epoch_loss_avg.result()
 
-            with self.epoch_summary_writer.as_default():
-                tf.summary.scalar('Average loss per epoch', avg, step=epoch+1)
+            if not debug:
+                with self.epoch_summary_writer.as_default():
+                    tf.summary.scalar('Average loss per epoch', avg, step=epoch+1)
             self.epoch_loss.append(avg)
 
             print('End of epoch {}. Average training Loss: {:.3f}'.format(epoch+1, avg))
 
             if test_data:
                 acc = self.evaluate(test_data, validation_steps)
-                with self.epoch_summary_writer.as_default():
-                    tf.summary.scalar('Validation accuracy', acc, step=epoch+1)
+                if not debug:
+                    with self.epoch_summary_writer.as_default():
+                        tf.summary.scalar('Validation accuracy', acc, step=epoch+1)
                 self.validation_acc.append(acc)
                 print('Validation accuracy: {:.2f}%'.format(acc*100))
 
@@ -156,6 +162,7 @@ if __name__ == '__main__':
     # training configurations
     max_epochs = config['max_epochs']
     batch_size = config['batch_size']
+    debug = config['debug']
 
     # Data configurations
     image_shape = (config['image_size'], ) * 2
@@ -166,8 +173,11 @@ if __name__ == '__main__':
     num_classes = config['num_classes']
 
     if config['config'] == 'mnist':
-        train_set = utils.datagen.mnist_train(batch_size=batch_size)
-        test_set = utils.datagen.mnist_test(batch_size=batch_size)
+        train_set = utils.datagen.mnist(batch_size=batch_size, set='train')
+        test_set = utils.datagen.mnist(batch_size=batch_size, set='test')
+    elif config['config'] == 'cifar10':
+        train_set = utils.datagen.cifar10(batch_size=batch_size, set='train', channels=channels)
+        test_set = utils.datagen.cifar10(batch_size=batch_size, set='test', channels=channels)
     else:
         data_dir = Path(config['data_dir'])
         train_set = utils.datagen.image_generator(data_dir / 'train', batch_size=batch_size, image_shape=image_shape,
@@ -185,14 +195,15 @@ if __name__ == '__main__':
         print('Loading pre-trained seeker weights')
         seeker.load_weights(pretrained_seeker_weights)
 
-    seeker_trainer = SeekerTrainer(model=seeker, weight_dir=weight_dir, log_dir=log_dir)
+    seeker_trainer = SeekerTrainer(model=seeker, weight_dir=weight_dir, log_dir=log_dir, debug=debug)
 
-    with utils.training.WeightFailsafe(weight_dir, seeker):
+    with utils.training.WeightFailsafe(weight_dir, seeker, debug=debug):
         seeker_trainer.train(train_set, training_steps=train_images//batch_size,  max_epochs=max_epochs,
                           test_data=test_set, validation_steps=test_images//batch_size, update_every=6)
 
     print('Test set accuracy: {:.2f}%'.format(seeker_trainer.evaluate(test_set, test_images//batch_size) * 100))
 
-    final_weights = str(Path(weight_dir) / 'final_weights.h5')
-    print('Saving model to:', final_weights)
-    seeker.save_weights(final_weights)
+    if not debug:
+        final_weights = str(Path(weight_dir) / 'final_weights.h5')
+        print('Saving model to:', final_weights)
+        seeker.save_weights(final_weights)

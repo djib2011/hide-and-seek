@@ -14,20 +14,21 @@ import networks
 
 class HNSTrainer:
 
-    def __init__(self, model, weight_dir='weights', log_dir='logs', optimizer=None, loss_function=None):
-
+    def __init__(self, model, weight_dir='weights', log_dir='logs', optimizer=None, loss_function=None, debug=debug):
 
         self.model = model
 
-        self.weight_dir = weight_dir
-        if not Path(weight_dir).is_dir():
-            os.makedirs(weight_dir)
+        self.debug = debug
+        if not debug:
+            self.weight_dir = weight_dir
+            if not Path(weight_dir).is_dir():
+                os.makedirs(weight_dir)
 
-        self.log_dir = log_dir
-        if not Path(log_dir).is_dir():
-            os.makedirs(log_dir)
-        self.train_summary_writer = tf.summary.create_file_writer(log_dir + '/batch')
-        self.epoch_summary_writer = tf.summary.create_file_writer(log_dir + '/epoch')
+            self.log_dir = log_dir
+            if not Path(log_dir).is_dir():
+                os.makedirs(log_dir)
+            self.train_summary_writer = tf.summary.create_file_writer(log_dir + '/batch')
+            self.epoch_summary_writer = tf.summary.create_file_writer(log_dir + '/epoch')
 
         if optimizer:
             self.optimizer = optimizer
@@ -62,14 +63,15 @@ class HNSTrainer:
 
         self.current_classification_loss = classification_loss  # store for monitor
 
-        with self.train_summary_writer.as_default():
-            tf.summary.scalar('pixels hidden', pixels_kept, step=self.iteration)
-            tf.summary.scalar('pixels kept', pixels_hidden, step=self.iteration)
-            tf.summary.scalar('percentage hidden', percentage_hidden, step=self.iteration)
-            tf.summary.scalar('classification loss', classification_loss, step=self.iteration)
-            tf.summary.scalar('mask loss', mask_loss, step=self.iteration)
-            tf.summary.scalar('loss regulator', self.a, step=self.iteration)
-            tf.summary.scalar('total loss', total_loss, step=self.iteration)
+        if not self.debug:
+            with self.train_summary_writer.as_default():
+                tf.summary.scalar('pixels hidden', pixels_kept, step=self.iteration)
+                tf.summary.scalar('pixels kept', pixels_hidden, step=self.iteration)
+                tf.summary.scalar('percentage hidden', percentage_hidden, step=self.iteration)
+                tf.summary.scalar('classification loss', classification_loss, step=self.iteration)
+                tf.summary.scalar('mask loss', mask_loss, step=self.iteration)
+                tf.summary.scalar('loss regulator', self.a, step=self.iteration)
+                tf.summary.scalar('total loss', total_loss, step=self.iteration)
 
         return total_loss
 
@@ -82,8 +84,9 @@ class HNSTrainer:
 
         total_grad = np.abs(np.concatenate([g.numpy().flatten() for g in grads], axis=0)).sum()
 
-        with self.train_summary_writer.as_default():
-            tf.summary.scalar('gradients', total_grad, step=self.iteration)
+        if not self.debug:
+            with self.train_summary_writer.as_default():
+                tf.summary.scalar('gradients', total_grad, step=self.iteration)
 
         self.optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
 
@@ -125,8 +128,9 @@ class HNSTrainer:
                 epoch_loss_avg(batch_loss)
                 self.total_train_loss.append(batch_loss)
 
-                with self.train_summary_writer.as_default():
-                    tf.summary.scalar('loss monitor', monitor.average(), step=self.iteration)
+                if not self.debug:
+                    with self.train_summary_writer.as_default():
+                        tf.summary.scalar('loss monitor', monitor.average(), step=self.iteration)
 
                 if i == training_steps:
                     break
@@ -155,8 +159,9 @@ class HNSTrainer:
 
             avg = epoch_loss_avg.result()
 
-            with self.epoch_summary_writer.as_default():
-                tf.summary.scalar('Average loss per epoch', avg, step=epoch+1)
+            if not self.debug:
+                with self.epoch_summary_writer.as_default():
+                    tf.summary.scalar('Average loss per epoch', avg, step=epoch+1)
             self.epoch_loss.append(avg)
 
             if terminate:
@@ -168,8 +173,9 @@ class HNSTrainer:
 
             if test_data:
                 acc = self.evaluate(test_data, validation_steps)
-                with self.epoch_summary_writer.as_default():
-                    tf.summary.scalar('Validation accuracy', acc, step=epoch+1)
+                if not self.debug:
+                    with self.epoch_summary_writer.as_default():
+                        tf.summary.scalar('Validation accuracy', acc, step=epoch+1)
                 self.validation_acc.append(acc)
                 print('               Validation accuracy: {:.2f}%'.format(acc*100))
 
@@ -252,6 +258,7 @@ if __name__ == '__main__':
     # training configurations
     max_epochs = config['max_epochs']
     batch_size = config['batch_size']
+    debug = config['debug']
 
     # Data configurations
     image_shape = (config['image_size'], ) * 2
@@ -262,12 +269,17 @@ if __name__ == '__main__':
     num_classes = config['num_classes']
 
     if config['config'] == 'mnist':
-        train_set = utils.datagen.mnist_train(batch_size=batch_size)
-        test_set = utils.datagen.mnist_test(batch_size=batch_size)
+        train_set = utils.datagen.mnist(batch_size=batch_size, set='train')
+        test_set = utils.datagen.mnist(batch_size=batch_size, set='test')
+    elif config['config'] == 'cifar10':
+        train_set = utils.datagen.cifar10(batch_size=batch_size, set='train', channels=channels)
+        test_set = utils.datagen.cifar10(batch_size=batch_size, set='test', channels=channels)
     else:
         data_dir = Path(config['data_dir'])
-        train_set = utils.datagen.image_generator(data_dir / 'train',batch_size=batch_size, image_shape=image_shape, channels=channels)
-        test_set = utils.datagen.image_generator(data_dir / 'test', batch_size=batch_size, image_shape=image_shape, channels=channels)
+        train_set = utils.datagen.image_generator(data_dir / 'train',batch_size=batch_size, image_shape=image_shape,
+                                                  channels=channels)
+        test_set = utils.datagen.image_generator(data_dir / 'test', batch_size=batch_size, image_shape=image_shape,
+                                                 channels=channels)
 
     sub_dirs = Path(config['config']) / 'hns' / binary_type
 
@@ -300,20 +312,21 @@ if __name__ == '__main__':
 
         del hider, seeker
 
-    hns_trainer = HNSTrainer(model=hns_model, weight_dir=weight_dir, log_dir=log_dir)
+    hns_trainer = HNSTrainer(model=hns_model, weight_dir=weight_dir, log_dir=log_dir, debug=debug)
 
     if alpha:
         print('Training model with constant loss weighting. alpha set to {}.'.format(alpha))
     else:
         print('Training model with adaptive loss weighting. Initial alpha set to 1.0.')
 
-    with utils.training.WeightFailsafe(weight_dir, hns_model):
+    with utils.training.WeightFailsafe(weight_dir, hns_model, debug=debug):
         hns_trainer.train(train_set, training_steps=train_images//batch_size,  max_epochs=max_epochs,
                           test_data=test_set, validation_steps=test_images//batch_size, adaptive_weighting=adaptive,
                           alpha=alpha, a_patience=patience, loss_to_monitor=monitor, update_every=6)
 
     print('Test set accuracy: {:.2f}%'.format(hns_trainer.evaluate(test_set, test_images//batch_size) * 100))
 
-    final_weights = str(Path(weight_dir) / 'final_weights.h5')
-    print('Saving model to:', final_weights)
-    hns_model.save_weights(final_weights)
+    if not debug:
+        final_weights = str(Path(weight_dir) / 'final_weights.h5')
+        print('Saving model to:', final_weights)
+        hns_model.save_weights(final_weights)

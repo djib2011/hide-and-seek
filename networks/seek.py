@@ -47,8 +47,9 @@ def seeker_large(input_shape, num_classes):
 
 
 def seeker_resnet(input_shape, num_classes):
-    res = tf.keras.applications.resnet50.ResNet50(input_shape=input_shape)(masked_img)
-    out = tf.keras.layers.Dense(num_classes, activation='softmax', name='seeker_output')(res.output[-2])
+    res = tf.keras.applications.resnet50.ResNet50(input_shape=input_shape, include_top=False)
+    flat = tf.keras.layers.Flatten()(res.output)
+    out = tf.keras.layers.Dense(num_classes, activation='softmax', name='seeker_output')(flat)
     model = tf.keras.models.Model(inputs=[res.input], outputs=[out])
     return model
 

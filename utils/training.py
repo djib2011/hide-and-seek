@@ -47,24 +47,30 @@ class MetricMonitor:
 
 class WeightFailsafe:
 
-    def __init__(self, weight_dir=None, model=None):
+    def __init__(self, weight_dir=None, model=None, debug=False):
+
         if not weight_dir:
             weight_dir = '.'
+
         if not model:
             if 'model' in globals():
                 model = globals()['model']
             else:
                 raise ValueError('Model not found, please add a model.')
+
         self.file_name = Path(weight_dir) / 'checkpoint.h5'
         self.model = model
+        self.debug = debug
 
     def __enter__(self):
+        
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
 
-        print('Training loop terminated. Saving weights to:', self.file_name)
-        self.model.save_weights(str(self.file_name))
+        if not self.debug:
+            print('Training loop terminated. Saving weights to:', self.file_name)
+            self.model.save_weights(str(self.file_name))
 
 
 def transfer_weights(hns, pretrained_hider, pretrained_seeker=None):

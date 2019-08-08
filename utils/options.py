@@ -19,9 +19,9 @@ parser.add_argument('--identifier', type=str, default=None, help='Name of the cu
 parser.add_argument('--config', type=str, default='animals', help='Name of a valid configuration from "config.txt"')
 
 # Experimental options
-parser.add_argument('--stochastic', action='store_true', default=False, help='Select if you want to use Binary '
-                                                                             'Stochastic Neurons, instead of '
-                                                                             'Deterministic ones.')
+parser.add_argument('--stochastic', action='store_true', default=None, help='Select if you want to use Binary '
+                                                                            'Stochastic Neurons, instead of '
+                                                                            'Deterministic ones.')
 parser.add_argument('--estimator', type=str, default=None, help='Name of the gradient estimator. only relevant for '
                                                                 'stochastic neurons')
 parser.add_argument('--rate', type=float, default=None, help='Slope increase rate of Slope-Annealing estimator (only '
@@ -63,6 +63,11 @@ parser.add_argument('--batch_size', type=int, default=None, help='Batch size')
 parser.add_argument('--max_epochs', type=int, default=None, help='Maximum number of epochs. Adaptive loss weighting may'
                                                                  ' cause the network to converge faster.')
 parser.add_argument('--gpu', type=str, default=None, help='Which gpu to use. Only relevant for multi-gpu enviromnemts.')
+parser.add_argument('--debug', action='store_true', default=False, help='If set to True, no weights or logs'
+                                                                                  'will be stored for the models. It is'
+                                                                                  'intended for seeing if a script runs'
+                                                                                  'properly, without generating empty'
+                                                                                  'logs or useless weights.')
 
 
 if hasattr(__main__, '__file__'):
@@ -76,8 +81,8 @@ args = vars(opt)
 # Parse config file
 defaults = {'batch_size': 64, 'max_epochs': 10, 'gpu': 0, 'model': 'hns_small', 'config': None, 'data_dir': None,
             'image_size': None, 'channels': None, 'num_classes': None, 'hider_weights': None, 'seeker_weights': None,
-            'train_images': None, 'test_images': None, 'stochastic': True, 'estimator': 'st1', 'patience': 100,
-            'alpha': None, 'monitor': 'classification', 'rate': 0.5}
+            'train_images': None, 'test_images': None, 'stochastic': False, 'estimator': 'st1', 'patience': 100,
+            'alpha': None, 'monitor': 'classification', 'rate': 0.5, 'debug': False}
 
 
 def parse_config():
@@ -167,10 +172,10 @@ else:
 config['rate_per_iteration'] = config['rate'] / config['train_images']
 
 # Print final form of configuration file 
-print('\n{:<15} | {}'.format('Argument', 'Value'))
-print('-'*50)
+print('\n{:<20} | {}'.format('Argument', 'Value'))
+print('-'*55)
 for k, v in sorted(config.items()):
     if not k in('identifier', 'config'):
-        print('{:<15} | {}'.format(k, v))
+        print('{:<20} | {}'.format(k, v))
 
 print('\n'*5)
