@@ -46,7 +46,7 @@
     train_images = 50000
     test_images = 10000
     num_classes = 10
-    max_epochs = 10
+    max_epochs = 100
     batch_size = 256
     gpu = 0
     model = hns_small

@@ -175,14 +175,19 @@ if __name__ == '__main__':
     # num_classes = 10
     # model = hide_and_seek_small(input_shape, num_classes)
 
+    # for cifar10
+    input_shape = (32, 32, 3)
+    num_classes = 10
+    model = hide_and_seek_small(input_shape, num_classes)
+
     # for animals
-    input_shape = (192, 192, 3)
-    num_classes = 398
+    # input_shape = (192, 192, 3)
+    # num_classes = 398
 
     # large
     # model = hide_and_seek_large(input_shape, num_classes)
 
     # resnet
-    model = hide_and_seek_resnet(input_shape, num_classes)
+    # model = hide_and_seek_resnet(input_shape, num_classes)
 
     model.summary()

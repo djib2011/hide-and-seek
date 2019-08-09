@@ -63,7 +63,7 @@ class WeightFailsafe:
         self.debug = debug
 
     def __enter__(self):
-        
+
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -73,7 +73,7 @@ class WeightFailsafe:
             self.model.save_weights(str(self.file_name))
 
 
-def transfer_weights(hns, pretrained_hider, pretrained_seeker=None):
+def transfer_weights(hns, pretrained_hider=None, pretrained_seeker=None, debug=False):
     """
     Function meant to transfer the weights from a pretrained Hider and Seeker to a full HideAndSeek model
     :param hns: The HNS model, whose weights we want to update.
@@ -83,33 +83,39 @@ def transfer_weights(hns, pretrained_hider, pretrained_seeker=None):
     :return: True, if the transfer is successful.
     """
 
-    # As long as the models' architectures match, transfer the weights
-    i = 0
+    def transfer_weights_starting_from_layer(layer_index, pretrained_model):
 
-    if pretrained_hider.input_shape != hns.input_shape:
-        raise ValueError('Models should have matching input shapes.')
-
-    while i < len(pretrained_hider.layers) and pretrained_hider.layers[i].output_shape == hns.layers[i].output_shape:
-
-        hns.layers[i].set_weights(pretrained_hider.layers[i].get_weights())
-        i += 1
-
-    if pretrained_seeker:
+        # As long as the models' architectures match, transfer the weights
+        i = layer_index
         j = 0
 
-        if hns.layers[i].name == 'hider_output':
-            i += 1  # skip binary layer (not image masking layer)
+        if pretrained_model.input_shape != hns.input_shape:
+            raise ValueError('Models should have matching input shapes.')
 
-        while j < len(pretrained_seeker.layers) and \
-                pretrained_seeker.layers[j].output_shape == hns.layers[i].output_shape:
+        while j < len(pretrained_model.layers) and \
+                pretrained_model.layers[j].output_shape == hns.layers[i].output_shape:
 
-            hns.layers[i].set_weights(pretrained_hider.layers[j].get_weights())
+            if debug:
+                print('Pretrained:', pretrained_model.layers[j].name)
+                print('HNS:       ', hns.layers[i].name)
+
+            hns.layers[i].set_weights(pretrained_model.layers[j].get_weights())
             i += 1
             j += 1
 
-        print('Successfully transferred weights from {} hider and {} seeker layers.'.format(i-j-1, j))
+        return i - layer_index
 
-    else:
-        print('Successfully transferred weights from the first {} layers.'.format(i))
+    h = s = 0
 
-    return True
+    if pretrained_hider:
+        # Start from the beginning for the hider
+        start_from_layer = 0
+        h = transfer_weights_starting_from_layer(start_from_layer, pretrained_hider)
+
+    if pretrained_seeker:
+        # Start from the maksing layer for the seeker
+        start_from_layer = hns.layers.index(hns.get_layer('hider_output')) + 1
+        s = transfer_weights_starting_from_layer(start_from_layer, pretrained_seeker)
+
+    print('Transferred weights from {} hider and {} seeker layers.'.format(h, s))
+

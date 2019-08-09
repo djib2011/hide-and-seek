@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-def seeker(input_shape=(28, 28, 1), num_classes=10):
+def seeker_small(input_shape=(28, 28, 1), num_classes=10):
 
     inp = tf.keras.layers.Input(shape=input_shape)
     c1 = tf.keras.layers.Conv2D(32, kernel_size=(4, 4), strides=(2, 2), activation='relu', padding='same')(inp)
@@ -15,7 +15,7 @@ def seeker(input_shape=(28, 28, 1), num_classes=10):
     return model
 
 
-def seeker_v2(input_shape=(28, 28, 1), num_classes=10):
+def seeker_small_v2(input_shape=(28, 28, 1), num_classes=10):
 
     inp = tf.keras.layers.Input(shape=input_shape)
     c1 = tf.keras.layers.Conv2D(32, kernel_size=(6, 6), strides=(1, 1), activation='relu', padding='same')(inp)
@@ -54,6 +54,6 @@ def seeker_resnet(input_shape, num_classes):
     return model
 
 
-available_models = {'hns_small': seeker,
+available_models = {'hns_small': seeker_small,
                     'hns_large': seeker_large,
                     'hns_resnet': seeker_resnet}
