@@ -38,6 +38,7 @@
     batch_size = 256
     gpu = 0
     model = hns_small
+    memory = 1024
 
 [cifar10]
     image_size = 32
@@ -49,3 +50,4 @@
     batch_size = 256
     gpu = 0
     model = hns_small
+    memory = 1024

@@ -11,6 +11,12 @@ import utils
 from utils.options import config
 import networks
 
+#tf.config.gpu.set_per_process_memory_growth(True)
+#tf.config.experimental.set_per_process_memory_growth(True)
+gpus = tf.config.experimental.list_physical_devices('GPU')
+tf.config.experimental.set_virtual_device_configuration(
+        gpus[0],
+        [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024)])
 
 class HNSTrainer:
 
@@ -256,6 +262,7 @@ if __name__ == '__main__':
     adaptive = alpha is None
 
     # training configurations
+    num_trainings = config['num_trainings']
     max_epochs = config['max_epochs']
     batch_size = config['batch_size']
     debug = config['debug']
@@ -281,52 +288,57 @@ if __name__ == '__main__':
         test_set = utils.datagen.image_generator(data_dir / 'test', batch_size=batch_size, image_shape=image_shape,
                                                  channels=channels)
 
-    sub_dirs = Path(config['config']) / 'hns' / binary_type
+    for training_i in range(num_trainings):
 
-    if binary_type == 'stochastic':
-        sub_dirs = sub_dirs / stochastic_estimator
-        if stochastic_estimator == 'sa':
-            sub_dirs = sub_dirs / 'rate_{}'.format(str(config['rate']))
+        sub_dirs = Path(config['config']) / 'hns' / binary_type
 
-    log_dir = str(Path('logs') / sub_dirs / identifier)
-    weight_dir = str(Path('weights') / sub_dirs / identifier)
+        if binary_type == 'stochastic':
+            sub_dirs = sub_dirs / stochastic_estimator
+            if stochastic_estimator == 'sa':
+                sub_dirs = sub_dirs / 'rate_{}'.format(str(config['rate']))
 
-    print('Initializing Hide-and-Seek model')
-    hns_model = networks.hns.available_models[model_id](input_shape, num_classes, binary_type=binary_type,
-                                                        stochastic_estimator=stochastic_estimator,
-                                                        slope_increase_rate=slope_increase_rate)
+        if num_trainings > 1:
+            sub_dirs = sub_dirs / str(training_i)
 
-    if pretrained_seeker_weights:
-        print('Loading pre-trained seeker')
-        seeker = networks.seek.available_models[model_id](input_shape, num_classes)
-        seeker.load_weights(pretrained_seeker_weights)
-    else:
-        seeker = None
+        log_dir = str(Path('logs') / sub_dirs / identifier)
+        weight_dir = str(Path('weights') / sub_dirs / identifier)
 
-    if pretrained_hider_weights:
-        print('Loading pre-trained hider')
-        hider = networks.hide.available_models[model_id](input_shape)
-        hider.load_weights(pretrained_hider_weights)
-        print('Transfering weights')
-        utils.training.transfer_weights(hns_model, hider, seeker)
+        print('Initializing Hide-and-Seek model')
+        hns_model = networks.hns.available_models[model_id](input_shape, num_classes, binary_type=binary_type,
+                                                            stochastic_estimator=stochastic_estimator,
+                                                            slope_increase_rate=slope_increase_rate)
 
-        del hider, seeker
+        if pretrained_seeker_weights:
+            print('Loading pre-trained seeker')
+            seeker = networks.seek.available_models[model_id](input_shape, num_classes)
+            seeker.load_weights(pretrained_seeker_weights)
+        else:
+            seeker = None
 
-    hns_trainer = HNSTrainer(model=hns_model, weight_dir=weight_dir, log_dir=log_dir, debug=debug)
+        if pretrained_hider_weights:
+            print('Loading pre-trained hider')
+            hider = networks.hide.available_models[model_id](input_shape)
+            hider.load_weights(pretrained_hider_weights)
+            print('Transfering weights')
+            utils.training.transfer_weights(hns_model, hider, seeker)
 
-    if alpha:
-        print('Training model with constant loss weighting. alpha set to {}.'.format(alpha))
-    else:
-        print('Training model with adaptive loss weighting. Initial alpha set to 1.0.')
+            del hider, seeker
 
-    with utils.training.WeightFailsafe(weight_dir, hns_model, debug=debug):
-        hns_trainer.train(train_set, training_steps=train_images//batch_size,  max_epochs=max_epochs,
-                          test_data=test_set, validation_steps=test_images//batch_size, adaptive_weighting=adaptive,
-                          alpha=alpha, a_patience=patience, loss_to_monitor=monitor, update_every=6)
+        hns_trainer = HNSTrainer(model=hns_model, weight_dir=weight_dir, log_dir=log_dir, debug=debug)
 
-    print('Test set accuracy: {:.2f}%'.format(hns_trainer.evaluate(test_set, test_images//batch_size) * 100))
+        if alpha:
+            print('Training model with constant loss weighting. alpha set to {}.'.format(alpha))
+        else:
+            print('Training model with adaptive loss weighting. Initial alpha set to 1.0.')
 
-    if not debug:
-        final_weights = str(Path(weight_dir) / 'final_weights.h5')
-        print('Saving model to:', final_weights)
-        hns_model.save_weights(final_weights)
+        with utils.training.WeightFailsafe(weight_dir, hns_model, debug=debug):
+            hns_trainer.train(train_set, training_steps=train_images//batch_size,  max_epochs=max_epochs,
+                              test_data=test_set, validation_steps=test_images//batch_size, adaptive_weighting=adaptive,
+                              alpha=alpha, a_patience=patience, loss_to_monitor=monitor, update_every=6)
+
+        print('Test set accuracy: {:.2f}%'.format(hns_trainer.evaluate(test_set, test_images//batch_size) * 100))
+
+        if not debug:
+            final_weights = str(Path(weight_dir) / 'final_weights.h5')
+            print('Saving model to:', final_weights)
+            hns_model.save_weights(final_weights)

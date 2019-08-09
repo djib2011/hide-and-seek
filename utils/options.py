@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import __main__
 
+import tensorflow as tf
 from pathlib import Path
 import argparse
 import os
@@ -65,7 +66,8 @@ parser.add_argument('--seeker_weights', type=str, default=None, help='Location o
 parser.add_argument('--batch_size', type=int, default=None, help='Batch size')
 parser.add_argument('--max_epochs', type=int, default=None, help='Maximum number of epochs. Adaptive loss weighting may'
                                                                  ' cause the network to converge faster.')
-parser.add_argument('--gpu', type=str, default=None, help='Which gpu to use. Only relevant for multi-gpu enviromnemts.')
+parser.add_argument('--gpu', type=int, default=None, help='Which gpu to use. Only relevant for multi-gpu enviromnemts.')
+parser.add_argument('--memory', type=int, default=None, help='How much memory to allocate on a gpu')
 parser.add_argument('--debug', action='store_true', default=False, help='If set to True, no weights or logs will be '
                                                                         'stored for the models. It is intended for '
                                                                         'seeing if a script runs properly, without '
@@ -83,7 +85,7 @@ args = vars(opt)
 defaults = {'batch_size': 64, 'max_epochs': 10, 'gpu': 0, 'model': 'hns_small', 'config': None, 'data_dir': None,
             'image_size': None, 'channels': None, 'num_classes': None, 'hider_weights': None, 'seeker_weights': None,
             'train_images': None, 'test_images': None, 'stochastic': False, 'estimator': 'st1', 'patience': 100,
-            'alpha': None, 'monitor': 'classification', 'rate': 0.5, 'debug': False, 'num_trainings': 1}
+            'alpha': None, 'monitor': 'classification', 'rate': 0.5, 'debug': False, 'num_trainings': 1, 'memory': None}
 
 
 def parse_config():
@@ -184,5 +186,14 @@ else:
 
 # Re-adjust the slope from the human-friendly "per epoch", to the "per iteration" that is needed
 config['rate_per_iteration'] = config['rate'] / config['train_images']
+
+# Limit access to  GPUs
+del os.environ['CUDA_VISIBLE_DEVICES']  # remove any system limitations
+gpus = tf.config.experimental.list_physical_devices('GPU')
+tf.config.experimental.set_visible_devices(gpus[config['gpu']], 'GPU')
+if config['memory']:
+    tf.config.experimental.set_virtual_device_configuration(gpus[config['gpu']],
+                                                            [tf.config.experimental.VirtualDeviceConfiguration(
+                                                                memory_limit=config['memory'])])
 
 print('\n'*5)
