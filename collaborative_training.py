@@ -11,12 +11,6 @@ import utils
 from utils.options import config
 import networks
 
-#tf.config.gpu.set_per_process_memory_growth(True)
-#tf.config.experimental.set_per_process_memory_growth(True)
-gpus = tf.config.experimental.list_physical_devices('GPU')
-tf.config.experimental.set_virtual_device_configuration(
-        gpus[0],
-        [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024)])
 
 class HNSTrainer:
 
@@ -159,7 +153,7 @@ class HNSTrainer:
 
                 if (time.time() - last_update) >= update_every * 3600:
                     last_update = time.time()
-                    print('\n  [Model has been successfully training for {:.1f} hours.'
+                    print('\n  [Model has been successfully training for {:.1f} hours. '
                           'Currently at step {} of {}, in epoch {}]'.format((last_update - start_time) / 3600,
                                                                             i+1, training_steps, epoch+1))
 
@@ -298,7 +292,7 @@ if __name__ == '__main__':
                 sub_dirs = sub_dirs / 'rate_{}'.format(str(config['rate']))
 
         if num_trainings > 1:
-            sub_dirs = sub_dirs / str(training_i)
+            identifier = Path(config['identifier']) / str(training_i + 1)
 
         log_dir = str(Path('logs') / sub_dirs / identifier)
         weight_dir = str(Path('weights') / sub_dirs / identifier)
