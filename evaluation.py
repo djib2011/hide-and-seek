@@ -2,6 +2,8 @@ import tensorflow as tf
 from pathlib import Path
 import numpy as np
 import os
+import pickle as pkl
+import matplotlib.pyplot as plt
 from sklearn.metrics import accuracy_score
 
 import utils
@@ -15,7 +17,7 @@ class HNSEvaluator:
 
         self.weight_dir = Path(weight_dir)
         self.weights = self.get_weights()
-        self.target_dir = Path(str(self.weight_dir).replace('/weights/', '/results/'))
+        self.target_dir = Path(str(self.weight_dir).replace('weights/', 'results/'))
         self.model = model
         self.results = {}
         self.debug = debug
@@ -26,7 +28,7 @@ class HNSEvaluator:
         self.evaluate(data, steps)
 
         print('Saving results...')
-        if not self.target_dir.is_dir():
+        if not self.debug and not self.target_dir.is_dir():
             os.makedirs(str(self.target_dir))
         self.save_results()
 
@@ -84,8 +86,10 @@ class HNSEvaluator:
 
         for a in np.arange(0.1, 1.01, 0.05):
 
-            directory = self.target_dir / 'a_{:.2f}'.format(a)
-            os.makedirs(str(directory))
+            directory = str(self.target_dir / 'a_{:.2f}'.format(a))
+
+            if not self.debug and not Path(directory).is_dir():
+                os.makedirs(directory)
             self.model.load_weights(self.weights[a])
 
             for b, (x, y) in enumerate(data):
@@ -102,7 +106,7 @@ class HNSEvaluator:
                         plt.imsave(directory + '/y' + str(i + 1) + accuracy[i] + '.png', yh[i, ..., 0])
 
                 if (b + 1) == batches:
-                    return
+                    break
 
 
 if __name__ == '__main__':

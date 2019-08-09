@@ -18,6 +18,9 @@ parser.add_argument('--identifier', type=str, default=None, help='Name of the cu
 # Preset configuration name
 parser.add_argument('--config', type=str, default='animals', help='Name of a valid configuration from "config.txt"')
 
+# Number of times to train the model
+parser.add_argument('--num_trainings', type=int, default=None, help='How many times to train the model')
+
 # Experimental options
 parser.add_argument('--stochastic', action='store_true', default=None, help='Select if you want to use Binary '
                                                                             'Stochastic Neurons, instead of '
@@ -80,7 +83,7 @@ args = vars(opt)
 defaults = {'batch_size': 64, 'max_epochs': 10, 'gpu': 0, 'model': 'hns_small', 'config': None, 'data_dir': None,
             'image_size': None, 'channels': None, 'num_classes': None, 'hider_weights': None, 'seeker_weights': None,
             'train_images': None, 'test_images': None, 'stochastic': False, 'estimator': 'st1', 'patience': 100,
-            'alpha': None, 'monitor': 'classification', 'rate': 0.5, 'debug': False}
+            'alpha': None, 'monitor': 'classification', 'rate': 0.5, 'debug': False, 'num_trainings': 1}
 
 
 def parse_config():
