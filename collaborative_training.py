@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 import os
 import time
+from guppy import hpy
 
 import utils
 from utils.options import config
@@ -223,6 +224,8 @@ class HNSTrainer:
 
 if __name__ == '__main__':
 
+    h = hpy()
+
     # Experiment identifier
     identifier = config['identifier']
 
@@ -302,21 +305,21 @@ if __name__ == '__main__':
                                                             stochastic_estimator=stochastic_estimator,
                                                             slope_increase_rate=slope_increase_rate)
 
+        hider = seeker = None
         if pretrained_seeker_weights:
             print('Loading pre-trained seeker')
             seeker = networks.seek.available_models[model_id](input_shape, num_classes)
             seeker.load_weights(pretrained_seeker_weights)
-        else:
-            seeker = None
 
         if pretrained_hider_weights:
             print('Loading pre-trained hider')
             hider = networks.hide.available_models[model_id](input_shape)
             hider.load_weights(pretrained_hider_weights)
             print('Transfering weights')
-            utils.training.transfer_weights(hns_model, hider, seeker)
 
-            del hider, seeker
+        utils.training.transfer_weights(hns_model, hider, seeker)
+
+        del hider, seeker
 
         hns_trainer = HNSTrainer(model=hns_model, weight_dir=weight_dir, log_dir=log_dir, debug=debug)
 
@@ -332,7 +335,12 @@ if __name__ == '__main__':
 
         print('Test set accuracy: {:.2f}%'.format(hns_trainer.evaluate(test_set, test_images//batch_size) * 100))
 
+        with open('/tmp/prof.txt', 'a') as f:
+            f.write(str(h.heap()))
+            f.write('\n')
+
         if not debug:
             final_weights = str(Path(weight_dir) / 'final_weights.h5')
             print('Saving model to:', final_weights)
             hns_model.save_weights(final_weights)
+            del hns_model, hns_trainer

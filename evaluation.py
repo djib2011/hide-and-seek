@@ -40,7 +40,8 @@ class HNSEvaluator:
     def get_weights(self):
 
         weights = {a: str(self.weight_dir / 'interm_weights_a_{:.2f}.h5'.format(a))
-                   for a in np.arange(0.1, 1.01, 0.05)}
+                   for a in np.arange(0.1, 1.01, 0.05)
+                   if (self.weight_dir / 'interm_weights_a_{:.2f}.h5'.format(a)).exists()}
         weights['final'] = self.weight_dir / 'final_weights.h5'
         return weights
 
@@ -83,6 +84,9 @@ class HNSEvaluator:
             pkl.dump(self.results, open(target_file, 'wb'))
 
     def generate_sample_images(self, data, batches=1):
+
+        if not batches:
+            return
 
         for a in np.arange(0.1, 1.01, 0.05):
 
@@ -134,7 +138,6 @@ if __name__ == '__main__':
 
     weight_dir = str(Path('weights') / sub_dirs / identifier)
 
-
     # Load dataset
     batch_size = config['batch_size']
     image_shape = (config['image_size'], ) * 2
@@ -142,7 +145,7 @@ if __name__ == '__main__':
     channels = config['channels']
     input_shape = image_shape + (channels,)
     num_classes = config['num_classes']
-
+    num_trainings = config['num_trainings']
 
     if config['config'] == 'mnist':
         train_set = utils.datagen.mnist(batch_size=batch_size, set='train')
@@ -163,5 +166,13 @@ if __name__ == '__main__':
                                                         slope_increase_rate=slope_increase_rate)
 
     # Run evaluator
-    evaluator = HNSEvaluator(model=hns_model, weight_dir=weight_dir, debug=debug)
-    evaluator.complete_evaluation(test_set, steps=test_images//batch_size, batches_to_save=1)
+    if num_trainings == 1:
+        evaluator = HNSEvaluator(model=hns_model, weight_dir=weight_dir, debug=debug)
+        evaluator.complete_evaluation(test_set, steps=test_images//batch_size, batches_to_save=1)
+    else:
+        weight_dirs = sorted(Path(weight_dir).glob('*'))
+        print('Evaluating for {} experiments'.format(len(weight_dirs)))
+        for i, weight_dir in enumerate(weight_dirs):
+            evaluator = HNSEvaluator(model=hns_model, weight_dir=weight_dir, debug=debug)
+            evaluator.complete_evaluation(test_set, steps=test_images // batch_size, batches_to_save=0)
+            print('completed evaluation {} of {}'.format(i+1, len(weight_dirs)))

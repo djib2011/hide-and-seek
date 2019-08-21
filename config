@@ -47,7 +47,7 @@
     test_images = 10000
     num_classes = 10
     max_epochs = 100
-    batch_size = 256
+    batch_size = 128
     gpu = 0
     model = hns_small
-    memory = 1024
+    memory = 4096
