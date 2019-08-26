@@ -141,11 +141,14 @@ def read_results(result_dir):
     return pd.concat(frames)
 
 
-def filter_logs_on_val_acc(epoch_logs, batch_logs, baseline, percentage=0.9):
+def filter_logs_on_val_acc(epoch_logs, batch_logs, baseline, percentage=0.9, return_epoch=False):
     valid_idx = [i for i in range(len(epoch_logs))
                  if epoch_logs[i]['Validation accuracy'].iloc[-1] > baseline * percentage]
 
-    return [batch_logs[i] for i in range(len(batch_logs)) if i in valid_idx]
+    if return_epoch:
+        return [epoch_logs[i] for i in range(len(epoch_logs)) if i in valid_idx]
+    else:
+        return [batch_logs[i] for i in range(len(batch_logs)) if i in valid_idx]
 
 
 def filter_logs_on_pix_hidden(batch_logs, percentage=0.9):
@@ -194,12 +197,15 @@ def plot_all_results(results, baseline=None):
     ax.spines['right'].set_visible(False)
 
 
-def plot_average_results(results, baseline=None):
+def plot_average_results(results, baseline=None, label=None):
 
     if baseline:
         plt.plot(alphas, [baseline] * len(alphas), label='baseline', c='0.5', ls='--')
 
-    sns.lineplot(x='alpha', y='accuracy', data=results, label='average performance accross models')
+    if not label:
+        label = 'average performance accross models'
+
+    sns.lineplot(x='alpha', y='accuracy', data=results, label=label)
 
     plt.legend(bbox_to_anchor=(1.01, 1.0))
     ax = plt.gca()
