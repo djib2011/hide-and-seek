@@ -98,7 +98,7 @@ class SeekerTrainer:
                     last_update = time.time()
                     print('\n  [Model has been successfully training for {:.1f} hours.'
                           'Currently at step {} of {}, in epoch {}]\n'.format((last_update - start_time) / 3600,
-                                                                            i+1, training_steps, epoch+1))
+                                                                              i+1, training_steps, epoch+1))
 
             avg = epoch_loss_avg.result()
 
@@ -131,8 +131,8 @@ class SeekerTrainer:
 
             preds = self.model(x)
 
-            y_pred = [np.argmax(p) for p in preds]
-            y_true = [np.argmax(p) for p in y]
+            y_pred = [np.argmax(pr) for pr in preds]
+            y_true = [np.argmax(pr) for pr in y]
             accuracy(accuracy_score(y_true, y_pred))
 
             if i == steps:
@@ -198,7 +198,7 @@ if __name__ == '__main__':
 
     with utils.training.WeightFailsafe(weight_dir, seeker, debug=debug):
         seeker_trainer.train(train_set, training_steps=train_images//batch_size,  max_epochs=max_epochs,
-                          test_data=test_set, validation_steps=test_images//batch_size, update_every=6)
+                             test_data=test_set, validation_steps=test_images//batch_size, update_every=6)
 
     print('Test set accuracy: {:.2f}%'.format(seeker_trainer.evaluate(test_set, test_images//batch_size) * 100))
 

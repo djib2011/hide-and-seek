@@ -72,6 +72,8 @@ parser.add_argument('--debug', action='store_true', default=False, help='If set 
                                                                         'stored for the models. It is intended for '
                                                                         'seeing if a script runs properly, without '
                                                                         'generating empty logs or useless weights.')
+parser.add_argument('--evaluate', action='store_true', default=None, help='Choose whether or not to evaluate the model'
+                                                                          'after the training is completed.')
 
 if hasattr(__main__, '__file__'):
     opt = parser.parse_args()
@@ -85,7 +87,8 @@ args = vars(opt)
 defaults = {'batch_size': 64, 'max_epochs': 10, 'gpu': 0, 'model': 'hns_small', 'config': None, 'data_dir': None,
             'image_size': None, 'channels': None, 'num_classes': None, 'hider_weights': None, 'seeker_weights': None,
             'train_images': None, 'test_images': None, 'stochastic': False, 'estimator': 'st1', 'patience': 100,
-            'alpha': None, 'monitor': 'classification', 'rate': 0.5, 'debug': False, 'num_trainings': 1, 'memory': None}
+            'alpha': None, 'monitor': 'classification', 'rate': 0.5, 'debug': False, 'num_trainings': 1, 'memory': None,
+            'evaluate': False}
 
 
 def parse_config():

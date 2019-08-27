@@ -6,11 +6,11 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 import os
 import time
-from guppy import hpy
 
 import utils
 from utils.options import config
 import networks
+import evaluation
 
 
 class HNSTrainer:
@@ -46,6 +46,7 @@ class HNSTrainer:
         self.total_train_loss = []
         self.validation_acc = []
         self.current_classification_loss = 0.
+        self.a = 1.
 
     def loss(self, x, y):
 
@@ -100,9 +101,7 @@ class HNSTrainer:
 
         terminate = False
 
-        if adaptive_weighting:
-            self.a = 1.
-        else:
+        if not adaptive_weighting:
             self.a = alpha
 
         monitor = utils.training.MetricMonitor(steps=a_patience)
@@ -197,8 +196,8 @@ class HNSTrainer:
 
             preds = self.model(x)['seeker_output']
 
-            y_pred = [np.argmax(p) for p in preds]
-            y_true = [np.argmax(p) for p in y]
+            y_pred = [np.argmax(pr) for pr in preds]
+            y_true = [np.argmax(pr) for pr in y]
             accuracy(accuracy_score(y_true, y_pred))
 
             if i == steps:
@@ -223,8 +222,6 @@ class HNSTrainer:
 
 
 if __name__ == '__main__':
-
-    h = hpy()
 
     # Experiment identifier
     identifier = config['identifier']
@@ -258,11 +255,12 @@ if __name__ == '__main__':
     slope_increase_rate = config['rate_per_iteration']
     adaptive = alpha is None
 
-    # training configurations
+    # Training configurations
     num_trainings = config['num_trainings']
     max_epochs = config['max_epochs']
     batch_size = config['batch_size']
     debug = config['debug']
+    evaluate = config['evaluate']
 
     # Data configurations
     image_shape = (config['image_size'], ) * 2
@@ -280,7 +278,7 @@ if __name__ == '__main__':
         test_set = utils.datagen.cifar10(batch_size=batch_size, set='test', channels=channels)
     else:
         data_dir = Path(config['data_dir'])
-        train_set = utils.datagen.image_generator(data_dir / 'train',batch_size=batch_size, image_shape=image_shape,
+        train_set = utils.datagen.image_generator(data_dir / 'train', batch_size=batch_size, image_shape=image_shape,
                                                   channels=channels)
         test_set = utils.datagen.image_generator(data_dir / 'test', batch_size=batch_size, image_shape=image_shape,
                                                  channels=channels)
@@ -335,12 +333,12 @@ if __name__ == '__main__':
 
         print('Test set accuracy: {:.2f}%'.format(hns_trainer.evaluate(test_set, test_images//batch_size) * 100))
 
-        with open('/tmp/prof.txt', 'a') as f:
-            f.write(str(h.heap()))
-            f.write('\n')
-
         if not debug:
             final_weights = str(Path(weight_dir) / 'final_weights.h5')
             print('Saving model to:', final_weights)
             hns_model.save_weights(final_weights)
             del hns_model, hns_trainer
+
+        if evaluate:
+            evaluator = evaluation.HNSEvaluator(model=hns_model, weight_dir=weight_dir, debug=debug)
+            evaluator.complete_evaluation(test_set, steps=test_images // batch_size, batches_to_save=0)
