@@ -40,7 +40,7 @@ def autoencoder_small_old(input_shape=(28, 28, 1)):
     return model
 
 
-def hider_large(input_shape=(28, 28, 1)):
+def hider_large(input_shape=(192, 192, 3)):
     # encoder
     inp = tf.keras.layers.Input(shape=input_shape)
     en0 = tf.keras.layers.Conv2D(32, kernel_size=(4, 4), strides=(2, 2), activation='relu', padding='same')(inp)
@@ -76,3 +76,13 @@ def mask_model(input_shape):
 available_models = {'hns_small': hider_small,
                     'hns_large': hider_large,
                     'hns_resnet': hider_large}
+
+if __name__ == '__main__':
+
+    for name, model_func in available_models.items():
+
+        print(name)
+
+        model = model_func()
+        print(model.summary())
+

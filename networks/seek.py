@@ -31,7 +31,7 @@ def seeker_small_v2(input_shape=(28, 28, 1), num_classes=10):
     return model
 
 
-def seeker_large(input_shape, num_classes):
+def seeker_large(input_shape=(192, 192, 3), num_classes=398):
     inp = tf.keras.layers.Input(input_shape)
     c1 = tf.keras.layers.Conv2D(32, kernel_size=(4, 4), strides=(2, 2), activation='relu', padding='same')(inp)
     c2 = tf.keras.layers.Conv2D(64, kernel_size=(4, 4), strides=(2, 2), activation='relu', padding='same')(c1)
@@ -46,7 +46,7 @@ def seeker_large(input_shape, num_classes):
     return model
 
 
-def seeker_resnet(input_shape, num_classes):
+def seeker_resnet(input_shape=(192, 192, 3), num_classes=398):
     res = tf.keras.applications.resnet50.ResNet50(input_shape=input_shape, include_top=False)
     flat = tf.keras.layers.Flatten()(res.output)
     out = tf.keras.layers.Dense(num_classes, activation='softmax', name='seeker_output')(flat)
@@ -57,3 +57,11 @@ def seeker_resnet(input_shape, num_classes):
 available_models = {'hns_small': seeker_small,
                     'hns_large': seeker_large,
                     'hns_resnet': seeker_resnet}
+
+if __name__ == '__main__':
+
+    for name, model_func in available_models.items():
+        print(name)
+        model = model_func()
+        print(model.summary())
+
