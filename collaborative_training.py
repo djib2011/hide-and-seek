@@ -313,9 +313,17 @@ if __name__ == '__main__':
             print('Loading pre-trained hider')
             hider = networks.hide.available_models[model_id](input_shape)
             hider.load_weights(pretrained_hider_weights)
-            print('Transfering weights')
 
-        utils.training.transfer_weights(hns_model, hider, seeker)
+        print('Transfering weights')
+        if model_id == 'hns_resnet':
+            # This workaround is needed to transfer the seeker weights,
+            # because the whole resnet model is represented as a layer
+            with utils.suppress_stdout():
+                h, _ = utils.training.transfer_weights(hns_model, hider)
+                s, _ = utils.training.transfer_weights(hns_model.get_layer('resnet50'), seeker)
+            print('Transferred weights from {} hider and {} seeker layers.'.format(h, s))
+        else:
+            utils.training.transfer_weights(hns_model, hider, seeker)
 
         del hider, seeker
 

@@ -92,7 +92,7 @@ def transfer_weights(hns, pretrained_hider=None, pretrained_seeker=None, debug=F
         if pretrained_model.input_shape != hns.input_shape:
             raise ValueError('Models should have matching input shapes.')
 
-        while j < len(pretrained_model.layers) and \
+        while j < len(pretrained_model.layers) and i < len(hns.layers) and \
                 pretrained_model.layers[j].output_shape == hns.layers[i].output_shape:
 
             if debug:
@@ -118,4 +118,4 @@ def transfer_weights(hns, pretrained_hider=None, pretrained_seeker=None, debug=F
         s = transfer_weights_starting_from_layer(start_from_layer, pretrained_seeker)
 
     print('Transferred weights from {} hider and {} seeker layers.'.format(h, s))
-
+    return h, s

@@ -17,6 +17,7 @@
 [animals]
     data_dir = /home/thanos/animals
     hider_weights = weights/animals/hider/final_weights.h5
+    seeker_weights = weights/animals/seeker/manual_training/best_weights.h5
     image_size = 192
     channels = 3
     train_images = 396416
