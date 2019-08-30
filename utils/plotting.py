@@ -7,6 +7,7 @@ import struct
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pickle as pkl
+from matplotlib import patches
 
 alphas = np.arange(0.1, 1.01, 0.05)
 
@@ -211,3 +212,99 @@ def plot_average_results(results, baseline=None, label=None):
     ax = plt.gca()
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
+
+
+def performance_projection(batch_logs, epoch_logs, baseline, label='points'):
+    batch_logs = [log['percentage hidden'].iloc[-1] for log in batch_logs]
+    epoch_logs = [log['Validation accuracy'].iloc[-1] for log in epoch_logs]
+    percentages, accuracies = zip(*[(b, e) for b, e in sorted(zip(batch_logs, epoch_logs))])
+    ax = plt.gca()
+    points = ax.scatter(percentages, accuracies, label=label)
+
+    def get_extensions(point1=(5, baseline), point2=(101, 0.1)):
+        x1, y1 = point1
+        x2, y2 = point2
+        s = (y2 - y1) / (x2 - x1)
+        b = y1 - s * x1
+        return (-1, -s + b), (-b / s, 0)
+
+    point1 = (5, baseline)
+    point2 = (101, 0.11)
+    col_array = np.array(get_extensions(point1, point2) + ((-1, 0),))
+    opt_array = np.array([(90, baseline * 2), (101, baseline * 2), (101, baseline * 0.9), (90, baseline * 0.9)])
+
+    col = patches.Polygon(col_array, color='0.7', alpha=0.5, label='collapse')
+    opt = patches.Polygon(opt_array, color='C2', alpha=0.5, label='optimal convergence')
+    ax.add_artist(col)
+    ax.add_artist(opt)
+
+    plt.legend(handles=[points, col, opt], loc='lower left')
+
+    plt.xlim(-1, 101)
+    plt.ylim(0, baseline * 1.05)
+    plt.xlabel('percentage hidden')
+    plt.ylabel('validation accuracy')
+
+
+def performance_projection_multiple(batch_logs_m, epoch_logs_m, baseline, labels=None, colors=None):
+    if not labels:
+        labels = [None] * len(batch_logs_m)
+    if not colors:
+        colors = [None] * len(batch_logs_m)
+    ax = plt.gca()
+    handles = []
+    for i in range(len(batch_logs_m)):
+        batch_logs = [log['percentage hidden'].iloc[-1] for log in batch_logs_m[i]]
+        epoch_logs = [log['Validation accuracy'].iloc[-1] for log in epoch_logs_m[i]]
+        percentages, accuracies = zip(*[(b, e) for b, e in sorted(zip(batch_logs, epoch_logs))])
+
+        points = ax.scatter(percentages, accuracies, label=labels[i], color=colors[i], alpha=0.7)
+        handles.append(points)
+
+    def get_extensions(point1=(5, baseline), point2=(101, 0.1)):
+        x1, y1 = point1
+        x2, y2 = point2
+        s = (y2 - y1) / (x2 - x1)
+        b = y1 - s * x1
+        return (-1, -s + b), (-b / s, 0)
+
+    point1 = (5, baseline)
+    point2 = (101, 0.11)
+    col_array = np.array(get_extensions(point1, point2) + ((-1, 0),))
+    opt_array = np.array([(90, baseline * 2), (101, baseline * 2), (101, baseline * 0.9), (90, baseline * 0.9)])
+
+    col = patches.Polygon(col_array, color='0.7', alpha=0.5, label='collapse', zorder=-1)
+    opt = patches.Polygon(opt_array, color='C2', alpha=0.5, label='optimal convergence', zorder=-1)
+    ax.add_artist(col)
+    ax.add_artist(opt)
+
+    plt.legend(handles=handles + [col, opt], loc='lower left')
+
+    plt.xlim(-1, 101)
+    plt.ylim(0, baseline * 1.05)
+    plt.xlabel('percentage hidden')
+    plt.ylabel('validation accuracy')
+
+
+def filter_logs_no_collapse(batch_logs, epoch_logs, baseline, type='both'):
+
+    collapse_zero = [log['percentage hidden'].iloc[-1] < 10 for log in batch_logs]
+
+
+    suspicious_masks = [log['percentage hidden'].iloc[-1] > 98.5 for log in batch_logs]
+    low_acc = [log['Validation accuracy'].iloc[-1] < 0.3 * baseline for log in epoch_logs]
+    collapse_full = [m & a for m, a in zip(suspicious_masks, low_acc)]
+
+    if type == 'zero':
+        final_batch = [b for i, b in enumerate(batch_logs) if not collapse_zero[i]]
+        final_epoch = [e for i, e in enumerate(epoch_logs) if not collapse_zero[i]]
+    elif type == 'full':
+        final_batch = [b for i, b in enumerate(batch_logs) if not collapse_full[i]]
+        final_epoch = [e for i, e in enumerate(epoch_logs) if not collapse_full[i]]
+    elif type == 'both':
+        final_batch = [b for i, b in enumerate(batch_logs) if not collapse_zero[i] | collapse_full[i]]
+        final_epoch = [e for i, e in enumerate(epoch_logs) if not collapse_zero[i] | collapse_full[i]]
+    else:
+        final_batch, final_epoch = batch_logs, epoch_logs
+
+    return final_batch, final_epoch
