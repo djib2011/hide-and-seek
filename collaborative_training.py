@@ -95,7 +95,8 @@ class HNSTrainer:
         return loss_value
 
     def train(self, train_data, training_steps, max_epochs=10, test_data=None, validation_steps=None,
-              adaptive_weighting=True, alpha=1., a_patience=100, loss_to_monitor='total', update_every=6):
+              adaptive_weighting=True, alpha=1., a_patience=100, loss_to_monitor='total', update_every=6,
+              save_weights_every=False):
 
         last_update = start_time = time.time()
 
@@ -156,6 +157,8 @@ class HNSTrainer:
                     print('\n  [Model has been successfully training for {:.1f} hours. '
                           'Currently at step {} of {}, in epoch {}]'.format((last_update - start_time) / 3600,
                                                                             i+1, training_steps, epoch+1))
+                    if save_weights_every:
+                        self.model.save_weights(weight_dir + 'checkpoint_weights_epoch_{}.h5'.format(epoch+1))
 
             avg = epoch_loss_avg.result()
 
@@ -337,7 +340,8 @@ if __name__ == '__main__':
         with utils.training.WeightFailsafe(weight_dir, hns_model, debug=debug):
             hns_trainer.train(train_set, training_steps=train_images//batch_size,  max_epochs=max_epochs,
                               test_data=test_set, validation_steps=test_images//batch_size, adaptive_weighting=adaptive,
-                              alpha=alpha, a_patience=patience, loss_to_monitor=monitor, update_every=6)
+                              alpha=alpha, a_patience=patience, loss_to_monitor=monitor, update_every=6,
+                              save_weights_every=True)
 
         print('Test set accuracy: {:.2f}%'.format(hns_trainer.evaluate(test_set, test_images//batch_size) * 100))
 
