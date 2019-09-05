@@ -15,9 +15,11 @@ import evaluation
 
 class HNSTrainer:
 
-    def __init__(self, model, weight_dir='weights', log_dir='logs', optimizer=None, loss_function=None, debug=False):
+    def __init__(self, model, weight_dir='weights', log_dir='logs', optimizer=None, loss_function=None, debug=False,
+                 baseline=None):
 
         self.model = model
+        self.baseline = baseline # required for FIR
 
         self.debug = debug
         if not debug:
@@ -46,6 +48,7 @@ class HNSTrainer:
         self.total_train_loss = []
         self.validation_acc = []
         self.current_classification_loss = 0.
+        self.current_percentage_hidden = 0.
         self.a = 1.
 
     def loss(self, x, y):
@@ -64,6 +67,7 @@ class HNSTrainer:
         percentage_hidden = (1 - mask_loss) * 100
 
         self.current_classification_loss = classification_loss  # store for monitor
+        self.current_percentage_hidden = percentage_hidden  # store for FIR
 
         if not self.debug:
             with self.train_summary_writer.as_default():
@@ -112,6 +116,7 @@ class HNSTrainer:
         for epoch in range(max_epochs):
 
             epoch_loss_avg = tf.keras.metrics.Mean()
+            percent_hidden_avg = tf.keras.metrics.Mean()
 
             for i, (x, y) in enumerate(train_data):
 
@@ -127,6 +132,7 @@ class HNSTrainer:
                     raise ValueError('Invalid "loss_to_monitor" value. Can either be "total" or "classification".')
 
                 epoch_loss_avg(batch_loss)
+                percent_hidden_avg(self.current_percentage_hidden)
                 self.total_train_loss.append(batch_loss)
 
                 if not self.debug:
@@ -179,6 +185,16 @@ class HNSTrainer:
                 if not self.debug:
                     with self.epoch_summary_writer.as_default():
                         tf.summary.scalar('Validation accuracy', acc, step=epoch+1)
+
+                        interpretability = percent_hidden_avg.result() / 100  # rescale to match accuracy
+                        tf.summary.scalar('Interpretability', interpretability, step=epoch+1)
+
+                        if self.baseline:
+                            fidelity = acc / baseline
+                            tf.summary.scalar('Fidelity', fidelity, step=epoch + 1)
+                            fir = fidelity / (fidelity + interpretability)
+                            tf.summary.scalar('FIR', fir, step=epoch + 1)
+                            
                 self.validation_acc.append(acc)
                 print('               Validation accuracy: {:.2f}%'.format(acc*100))
 
