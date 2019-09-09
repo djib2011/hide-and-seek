@@ -14,7 +14,7 @@ alphas = np.arange(0.1, 1.01, 0.05)
 
 def load_and_process_epoch_logs_from_dir(log_dir, extend_to_length=100):
 
-    def read_hns_epoch_logs(path_to_events_file):
+    def read_hns_epoch_logs_old(path_to_events_file):
         logs = {'Average loss per epoch': [],
                 'Validation accuracy': []}
 
@@ -27,12 +27,29 @@ def load_and_process_epoch_logs_from_dir(log_dir, extend_to_length=100):
 
         return pd.DataFrame(logs)
 
+    def read_hns_epoch_logs_new(path_to_events_file):
+        logs = {'Average loss per epoch': [],
+                'Validation accuracy': [],
+                'Fidelity': [],
+                'Interpretability': [],
+                'FIR': []}
+
+        for e in tf.compat.v1.train.summary_iterator(path_to_events_file):
+            for v in e.summary.value:
+                logs[v.tag].append(struct.unpack('f', v.tensor.tensor_content)[0])
+
+        if len(logs['Validation accuracy']) < len(logs['Average loss per epoch']):
+            #logs['Validation accuracy'].append(logs['Validation accuracy'][-1])
+            logs['Average loss per epoch'].pop()
+
+        return pd.DataFrame(logs)
+
     epoch_event_files = [str(list((d / 'epoch').glob('*'))[0]) for d in Path(log_dir).glob('*')]
 
     # Read log files
     logs = []
     for ev in epoch_event_files:
-        log = read_hns_epoch_logs(ev)
+        log = read_hns_epoch_logs_new(ev)
         log['step'] = log.index
         logs.append(log)
 
