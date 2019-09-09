@@ -194,7 +194,7 @@ class HNSTrainer:
                             tf.summary.scalar('Fidelity', fidelity, step=epoch + 1)
                             fir = fidelity / (fidelity + interpretability)
                             tf.summary.scalar('FIR', fir, step=epoch + 1)
-                            
+
                 self.validation_acc.append(acc)
                 print('               Validation accuracy: {:.2f}%'.format(acc*100))
 
@@ -280,6 +280,7 @@ if __name__ == '__main__':
     batch_size = config['batch_size']
     debug = config['debug']
     evaluate = config['evaluate']
+    baseline = config['baseline']
 
     # Data configurations
     image_shape = (config['image_size'], ) * 2
@@ -346,7 +347,8 @@ if __name__ == '__main__':
 
         del hider, seeker
 
-        hns_trainer = HNSTrainer(model=hns_model, weight_dir=weight_dir, log_dir=log_dir, debug=debug)
+        hns_trainer = HNSTrainer(model=hns_model, weight_dir=weight_dir, log_dir=log_dir, debug=debug,
+                                 baseline=baseline)
 
         if alpha:
             print('Training model with constant loss weighting. alpha set to {}.'.format(alpha))

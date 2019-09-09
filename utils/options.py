@@ -53,6 +53,9 @@ parser.add_argument('--train_images', type=int, default=None, help='How many ima
                                                                    'to the training set size. (optional)')
 parser.add_argument('--test_images', type=int, default=None, help='How many images you want to test on; usually set '
                                                                   'to the test set size. (optional)')
+parser.add_argument('--baseline', type=str, default=None, help='Location of a file containing the baseline for the '
+                                                               'specific dataset. Required for computation of Fidelity'
+                                                               'and FIR.')
 
 # Pretrained weights
 parser.add_argument('--model', type=str, default=None, help='Type of model to use. Available: "hns_small", "hns_large" '
@@ -88,7 +91,7 @@ defaults = {'batch_size': 64, 'max_epochs': 10, 'gpu': 0, 'model': 'hns_small', 
             'image_size': None, 'channels': None, 'num_classes': None, 'hider_weights': None, 'seeker_weights': None,
             'train_images': None, 'test_images': None, 'stochastic': False, 'estimator': 'st1', 'patience': 100,
             'alpha': None, 'monitor': 'classification', 'rate': 0.5, 'debug': False, 'num_trainings': 1, 'memory': None,
-            'evaluate': False}
+            'evaluate': False, 'baseline': None}
 
 
 def parse_config():
@@ -153,6 +156,12 @@ if config['data_dir']:
         raise OSError('Specified data_dir doesn\'t exist:', data_dir)
     if not config['num_classes']:
         config['num_classes'] = len([x for x in p.glob('train/*') if x.is_dir()])
+
+# Load the baseline and replace the path with its actual value
+if config['baseline']:
+    config['baseline_dir'] = config['baseline']
+    with open(config['baseline_dir']) as f:
+        config['baseline'] = float(f.read())
 
 
 # Find number of train/test set images
