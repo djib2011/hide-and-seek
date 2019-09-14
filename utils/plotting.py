@@ -49,7 +49,10 @@ def load_and_process_epoch_logs_from_dir(log_dir, extend_to_length=100):
     # Read log files
     logs = []
     for ev in epoch_event_files:
-        log = read_hns_epoch_logs_new(ev)
+        try:
+            log = read_hns_epoch_logs_new(ev)
+        except ValueError:
+            log = read_hns_epoch_logs_old(ev)
         log['step'] = log.index
         logs.append(log)
 
