@@ -24,6 +24,8 @@ suggest.
 
 ## Idea and Theory:
 
+The main idea is that we have two models, the **hider** and the **seeker**. These two are trained collaboratively...
+
 ## Description of experiments and results
 
 ## Detailed Guide :
