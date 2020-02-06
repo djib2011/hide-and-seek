@@ -30,9 +30,9 @@ The goal was to build a model that can not only classify images, but can indicat
 
 The reasoning behind this is that the model's interpretability is tied with the portion of the input that the model manages to hide. If it hides a small part of the input then its interpretability is smaller. Intuitively, this can be seen in the example below:
 
-> Model1: ***Although** the food **wasn't bad**, we **didn't** have a **good** time*.
-> Model2: ***Although** the food **wasn't bad**, we **didn't** have a good time*.
-> Model3: *Although the food wasn't bad, we **didn't** have a **good** time*.
+> Model1: ***Although** the food **wasn't bad**, we **didn't** have a **good** time*.  
+> Model2: ***Although** the food **wasn't bad**, we **didn't** have a good time*.  
+> Model3: *Although the food wasn't bad, we **didn't** have a **good** time*.  
 >
 > Out of these three models the third is the most interpretable, as it underlines only the necessary words that convey the sentiment of the sentence.
 
