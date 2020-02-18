@@ -193,7 +193,9 @@ class HNSTrainer:
                             fidelity = acc / baseline
                             tf.summary.scalar('Fidelity', fidelity, step=epoch + 1)
                             fir = fidelity / (fidelity + interpretability)
+                            fii = fidelity * interpretability
                             tf.summary.scalar('FIR', fir, step=epoch + 1)
+                            tf.summary.scalar('FII', fii, step=epoch + 1)
 
                 self.validation_acc.append(acc)
                 print('               Validation accuracy: {:.2f}%'.format(acc*100))
@@ -372,3 +374,5 @@ if __name__ == '__main__':
         if evaluate:
             evaluator = evaluation.HNSEvaluator(model=hns_model, weight_dir=weight_dir, debug=debug)
             evaluator.complete_evaluation(test_set, steps=test_images // batch_size, batches_to_save=0)
+
+        tf.keras.backend.clear_session()  # to clear default graph and not grow in memory if num_trainings > 1

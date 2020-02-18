@@ -29,7 +29,6 @@
     model = hns_resnet
 
 [mnist]
-    hider_weights = weights/mnist/hider/final/final_weights.h5
     baseline = results/mnist/seeker/final/baseline.txt
     image_size = 28
     channels = 1
