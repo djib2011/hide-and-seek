@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pickle as pkl
 from matplotlib import patches
+import matplotlib.pyplot as plt
+
 
 alphas = np.arange(0.1, 1.01, 0.05)
 
@@ -32,7 +34,8 @@ def load_and_process_epoch_logs_from_dir(log_dir, extend_to_length=100):
                 'Validation accuracy': [],
                 'Fidelity': [],
                 'Interpretability': [],
-                'FIR': []}
+                'FIR': [],
+                'FII': []}
 
         for e in tf.compat.v1.train.summary_iterator(path_to_events_file):
             for v in e.summary.value:
@@ -304,6 +307,49 @@ def performance_projection_multiple(batch_logs_m, epoch_logs_m, baseline, labels
     plt.ylim(0, baseline * 1.05)
     plt.xlabel('percentage hidden')
     plt.ylabel('validation accuracy')
+    
+def fidelity_interpretability_projection(epoch_logs_m, baseline, labels=None, colors=None, max_fii=True):
+    if not labels:
+        labels = [None] * len(epoch_logs_m)
+    if not colors:
+        colors = [None] * len(epoch_logs_m)
+    ax = plt.gca()
+    handles = []
+    for i in range(len(epoch_logs_m)):
+        
+        if max_fii:
+            idx = [np.argmax(log['FII'].values) for log in epoch_logs_m[i]]
+        else:
+            idx = [-1] * len(epoch_logs_m[i])
+            
+        interpretability = [log['Interpretability'].iloc[i] for i, log in zip(idx, epoch_logs_m[i])]
+        fidelity = [log['Fidelity'].iloc[i] for i, log in zip(idx, epoch_logs_m[i])]
+
+        points = ax.scatter(interpretability, fidelity, label=labels[i], color=colors[i], alpha=0.7)
+        handles.append(points)
+
+    def get_extensions(point1=(0.05, baseline), point2=(1.01, 0.1)):
+        x1, y1 = point1
+        x2, y2 = point2
+        s = (y2 - y1) / (x2 - x1)
+        b = y1 - s * x1
+        return (-1, -s + b), (-b / s, 0)
+
+    point1 = (0.05, 1.01)
+    point2 = (1.01, 0.05)
+    col_array = np.array(get_extensions(point1, point2) + ((-1, 0),))
+
+    col = patches.Polygon(col_array, color='0.7', alpha=0.5, label='collapse', zorder=-1)
+    opt = patches.Circle((1,1), radius=0.15, color='C2', alpha=0.5, label='optimal convergence', zorder=-1)
+    ax.add_artist(col)
+    ax.add_artist(opt)
+    ax.set_aspect('equal')
+    plt.legend(handles=handles + [col, opt], loc='lower left')
+
+    plt.xlim(0, 1.01)
+    plt.ylim(0, 1.01)
+    plt.xlabel('Interpretability')
+    plt.ylabel('Fidelity')
 
 
 def filter_logs_no_collapse(batch_logs, epoch_logs, baseline, type='both'):
