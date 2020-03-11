@@ -7,7 +7,7 @@ import struct
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pickle as pkl
-from matplotlib import patches
+import matplotlib
 import matplotlib.pyplot as plt
 
 
@@ -256,8 +256,8 @@ def performance_projection(batch_logs, epoch_logs, baseline, label='points'):
     col_array = np.array(get_extensions(point1, point2) + ((-1, 0),))
     opt_array = np.array([(90, baseline * 2), (101, baseline * 2), (101, baseline * 0.9), (90, baseline * 0.9)])
 
-    col = patches.Polygon(col_array, color='0.7', alpha=0.5, label='collapse')
-    opt = patches.Polygon(opt_array, color='C2', alpha=0.5, label='optimal convergence')
+    col = matplotlib.patches.Polygon(col_array, color='0.7', alpha=0.5, label='collapse')
+    opt = matplotlib.patches.Polygon(opt_array, color='C2', alpha=0.5, label='optimal convergence')
     ax.add_artist(col)
     ax.add_artist(opt)
 
@@ -296,8 +296,8 @@ def performance_projection_multiple(batch_logs_m, epoch_logs_m, baseline, labels
     col_array = np.array(get_extensions(point1, point2) + ((-1, 0),))
     opt_array = np.array([(90, baseline * 2), (101, baseline * 2), (101, baseline * 0.9), (90, baseline * 0.9)])
 
-    col = patches.Polygon(col_array, color='0.7', alpha=0.5, label='collapse', zorder=-1)
-    opt = patches.Polygon(opt_array, color='C2', alpha=0.5, label='optimal convergence', zorder=-1)
+    col = matplotlib.patches.Polygon(col_array, color='0.7', alpha=0.5, label='collapse', zorder=-1)
+    opt = matplotlib.patches.Polygon(opt_array, color='C2', alpha=0.5, label='optimal convergence', zorder=-1)
     ax.add_artist(col)
     ax.add_artist(opt)
 
@@ -308,12 +308,67 @@ def performance_projection_multiple(batch_logs_m, epoch_logs_m, baseline, labels
     plt.xlabel('percentage hidden')
     plt.ylabel('validation accuracy')
     
-def fidelity_interpretability_projection(epoch_logs_m, baseline, labels=None, colors=None, max_fii=True):
+def fidelity_interpretability_projection(epoch_logs_m, baseline, labels=None, colors=None, max_fii=True, ax=None,
+                                         cmap='RdYlGn', reverse_cmap=False):
     if not labels:
         labels = [None] * len(epoch_logs_m)
     if not colors:
         colors = [None] * len(epoch_logs_m)
-    ax = plt.gca()
+    if not ax:
+        ax = plt.gca()
+        
+    cmap = matplotlib.cm.get_cmap(cmap)
+    
+    r = np.arange(0, 1.5, 0.1)[::-1]
+    cmap_r = r / r.max()
+    if reverse_cmap:
+        cmap_r = cmap_r[::-1]
+
+    p = matplotlib.patches.Circle((0, 0), r[0]+0.1, color=cmap(1.0), zorder=-1, alpha=0.2)
+    ax.add_artist(p)
+
+    for i in range(len(r)):
+        p = matplotlib.patches.Circle((0, 0), r[i], color=cmap(cmap_r[i]), zorder=-1, alpha=0.2)
+        ax.add_artist(p)
+
+        
+    handles = []
+    for i in range(len(epoch_logs_m)):
+        
+        if max_fii:
+            idx = [np.argmax(log['FII'].values) for log in epoch_logs_m[i]]
+        else:
+            idx = [-1] * len(epoch_logs_m[i])
+            
+        interpretability = [log['Interpretability'].iloc[i] for i, log in zip(idx, epoch_logs_m[i])]
+        fidelity = [log['Fidelity'].iloc[i] for i, log in zip(idx, epoch_logs_m[i])]
+
+        points = ax.scatter(interpretability, fidelity, label=labels[i], color=colors[i], alpha=0.7)
+        handles.append(points)
+
+    ax.set_aspect('equal')
+    
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+
+    plt.legend(handles=handles, loc='lower center')
+
+    plt.xlim(0, 1.01)
+    plt.ylim(0, 1.01)
+    plt.xlabel('Interpretability')
+    plt.ylabel('Fidelity')
+
+
+def fidelity_interpretability_projection_old(epoch_logs_m, baseline, labels=None, colors=None, max_fii=True, ax=None):
+    if not labels:
+        labels = [None] * len(epoch_logs_m)
+    if not colors:
+        colors = [None] * len(epoch_logs_m)
+    if not ax:
+        ax = plt.gca()
+    
     handles = []
     for i in range(len(epoch_logs_m)):
         
@@ -339,8 +394,8 @@ def fidelity_interpretability_projection(epoch_logs_m, baseline, labels=None, co
     point2 = (1.01, 0.05)
     col_array = np.array(get_extensions(point1, point2) + ((-1, 0),))
 
-    col = patches.Polygon(col_array, color='0.7', alpha=0.5, label='collapse', zorder=-1)
-    opt = patches.Circle((1,1), radius=0.15, color='C2', alpha=0.5, label='optimal convergence', zorder=-1)
+    col = matplotlib.patches.Polygon(col_array, color='0.7', alpha=0.5, label='collapse', zorder=-1)
+    opt = matplotlib.patches.Circle((1,1), radius=0.15, color='C2', alpha=0.5, label='optimal convergence', zorder=-1)
     ax.add_artist(col)
     ax.add_artist(opt)
     ax.set_aspect('equal')
@@ -351,26 +406,49 @@ def fidelity_interpretability_projection(epoch_logs_m, baseline, labels=None, co
     plt.xlabel('Interpretability')
     plt.ylabel('Fidelity')
 
-
-def filter_logs_no_collapse(batch_logs, epoch_logs, baseline, type='both'):
+    
+def filter_logs_no_collapse(batch_logs, epoch_logs, baseline, log_type='both'):
 
     collapse_zero = [log['percentage hidden'].iloc[-1] < 10 for log in batch_logs]
-
 
     suspicious_masks = [log['percentage hidden'].iloc[-1] > 98.5 for log in batch_logs]
     low_acc = [log['Validation accuracy'].iloc[-1] < 0.3 * baseline for log in epoch_logs]
     collapse_full = [m & a for m, a in zip(suspicious_masks, low_acc)]
 
-    if type == 'zero':
+    if log_type == 'zero':
         final_batch = [b for i, b in enumerate(batch_logs) if not collapse_zero[i]]
         final_epoch = [e for i, e in enumerate(epoch_logs) if not collapse_zero[i]]
-    elif type == 'full':
+    elif log_type == 'full':
         final_batch = [b for i, b in enumerate(batch_logs) if not collapse_full[i]]
         final_epoch = [e for i, e in enumerate(epoch_logs) if not collapse_full[i]]
-    elif type == 'both':
+    elif log_type == 'both':
         final_batch = [b for i, b in enumerate(batch_logs) if not collapse_zero[i] | collapse_full[i]]
         final_epoch = [e for i, e in enumerate(epoch_logs) if not collapse_zero[i] | collapse_full[i]]
     else:
         final_batch, final_epoch = batch_logs, epoch_logs
+
+    return final_batch, final_epoch
+
+
+def filter_logs_on_proximity(batch_logs, epoch_logs, threshold=0.9):
+    
+    fidelity = [log['Fidelity'].iloc[-1] for log in epoch_logs]
+    interpretability = [log['Interpretability'].iloc[-1] for log in epoch_logs]
+    proximity = [np.sqrt(f ** 2 + i ** 2) for f, i in zip(fidelity, interpretability)]
+
+    final_batch = [log for log, p in zip(batch_logs, proximity) if p > threshold]
+    final_epoch = [log for log, p in zip(epoch_logs, proximity) if p > threshold]
+    
+    return final_batch, final_epoch
+
+
+def filter_logs_on_fi(batch_logs, epoch_logs, fidelity_thres=0.2, interpretability_thres=0.2):
+    
+    fidelity = [log['Fidelity'].iloc[-1] for log in epoch_logs]
+    interpretability = [log['Interpretability'].iloc[-1] for log in epoch_logs]
+    final_batch = [log for log, f, i in zip(batch_logs, fidelity, interpretability) 
+                   if (f >= fidelity_thres) and( i >= interpretability_thres)]
+    final_epoch = [log for log, f, i in zip(epoch_logs, fidelity, interpretability) 
+                   if (f >= fidelity_thres) and (i >= interpretability_thres)]
 
     return final_batch, final_epoch
