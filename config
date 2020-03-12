@@ -53,3 +53,16 @@
     gpu = 0
     model = hns_small
     memory = 4096
+
+[cifar100]
+    baseline = results/cifar100/seeker/default/baseline.txt
+    image_size = 32
+    channels = 3
+    train_images = 50000
+    test_images = 10000
+    num_classes = 100
+    max_epochs = 100
+    batch_size = 128
+    gpu = 0
+    model = hns_small
+    memory = 4096

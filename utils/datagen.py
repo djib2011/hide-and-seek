@@ -61,19 +61,19 @@ def image_generator(data_dir, batch_size=128, image_shape=(192, 192), channels=3
     return data
 
 
-def mnist(batch_size=64, set='train'):
+def mnist(batch_size=64, split='train'):
     """
     Generator that loads the mnist dataset.
     :param batch_size: The desired batch size.
-    :param set: Which set to load, "train" or "test".
+    :param split: Which set to load, "train" or "test".
     :return: a tf.data.Dataset that generates mnist images
     """
 
     # Load train/test set images
-    if set == 'train':
+    if split == 'train':
         (images, labels), (_, _) = tf.keras.datasets.mnist.load_data()
         images = images.reshape((60000, 28, 28, 1))
-    elif set == 'test':
+    elif split == 'test':
         (_, _), (images, labels) = tf.keras.datasets.mnist.load_data()
         images = images.reshape((10000, 28, 28, 1))
     else:
@@ -95,19 +95,19 @@ def mnist(batch_size=64, set='train'):
     return data
 
 
-def cifar10(batch_size=64, set='train', channels=3):
+def cifar10(batch_size=64, split='train', channels=3):
     """
     Generator that loads the cifar10 dataset.
     :param batch_size: The desired batch size.
-    :param set: Which set to load, "train" or "test".
+    :param split: Which set to load, "train" or "test".
     :param channels: How many channels do we want the image to have (3 for RGB, 1 for grayscale)
     :return: a tf.data.Dataset that generates cifar10 images
     """
 
     # Load train/test set images
-    if set == 'train':
+    if split == 'train':
         (images, labels), (_, _) = tf.keras.datasets.cifar10.load_data()
-    elif set == 'test':
+    elif split == 'test':
         (_, _), (images, labels) = tf.keras.datasets.cifar10.load_data()
     else:
         raise ValueError('Invalid value for argument "set". Should be either "train" or "test".')
@@ -120,6 +120,42 @@ def cifar10(batch_size=64, set='train', channels=3):
 
     # One-hot encode the labels
     labels = tf.keras.utils.to_categorical(labels, 10)
+
+    # Create tf.Dataset
+    data = tf.data.Dataset.from_tensor_slices((images, labels))
+    data = data.shuffle(buffer_size=len(images))
+    data = data.repeat()
+    data = data.batch(batch_size=batch_size)
+    data = data.prefetch(buffer_size=1)
+
+    return data
+
+
+def cifar100(batch_size=64, split='train', channels=3):
+    """
+    Generator that loads the cifar100 dataset.
+    :param batch_size: The desired batch size.
+    :param split: Which set to load, "train" or "test".
+    :param channels: How many channels do we want the image to have (3 for RGB, 1 for grayscale)
+    :return: a tf.data.Dataset that generates cifar10 images
+    """
+
+    # Load train/test set images
+    if split == 'train':
+        (images, labels), (_, _) = tf.keras.datasets.cifar100.load_data()
+    elif split == 'test':
+        (_, _), (images, labels) = tf.keras.datasets.cifar100.load_data()
+    else:
+        raise ValueError('Invalid value for argument "set". Should be either "train" or "test".')
+
+    if channels == 1:
+        images = np.expand_dims(images.mean(axis=-1), axis=-1)
+
+    # Normalize pixel values to be between 0 and 1
+    images = images.astype(np.float32) / 255.
+
+    # One-hot encode the labels
+    labels = tf.keras.utils.to_categorical(labels, 100)
 
     # Create tf.Dataset
     data = tf.data.Dataset.from_tensor_slices((images, labels))

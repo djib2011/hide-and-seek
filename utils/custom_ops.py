@@ -85,7 +85,6 @@ def binary_stochastic_reinforce(x, baseline=True, scale=True, seed=None):
     z = tf.random.uniform(tf.shape(s), minval=minval, maxval=maxval)  # seed argument doens't work
     y = tf.math.ceil(s - z)
 
-
     global loss_tensor
     # gradient computation
     diff = y - s

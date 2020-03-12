@@ -153,6 +153,9 @@ if __name__ == '__main__':
     elif config['config'] == 'cifar10':
         train_set = utils.datagen.cifar10(batch_size=batch_size, set='train', channels=channels)
         test_set = utils.datagen.cifar10(batch_size=batch_size, set='test', channels=channels)
+    elif config['config'] == 'cifar100':
+        train_set = utils.datagen.cifar100(batch_size=batch_size, set='train', channels=channels)
+        test_set = utils.datagen.cifar100(batch_size=batch_size, set='test', channels=channels)
     else:
         data_dir = Path(config['data_dir'])
         train_set = utils.datagen.image_generator(data_dir / 'train',batch_size=batch_size, image_shape=image_shape,

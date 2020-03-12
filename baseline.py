@@ -54,6 +54,8 @@ if __name__ == '__main__':
         test_set = utils.datagen.mnist(batch_size=batch_size, set='test')
     elif config['config'] == 'cifar10':
         test_set = utils.datagen.cifar10(batch_size=batch_size, set='test', channels=channels)
+    elif config['config'] == 'cifar100':
+        test_set = utils.datagen.cifar100(batch_size=batch_size, split='test', channels=channels)
     else:
         data_dir = Path(config['data_dir'])
         test_set = utils.datagen.image_generator(data_dir / 'test', batch_size=batch_size, image_shape=image_shape,

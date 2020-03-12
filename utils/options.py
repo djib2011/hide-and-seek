@@ -9,6 +9,9 @@ from pathlib import Path
 import argparse
 import os
 
+import warnings
+warnings.filterwarnings('once')
+
 # Parse command line arguments
 parser = argparse.ArgumentParser()
 
@@ -125,7 +128,7 @@ def parse_config():
 configs = parse_config()
 
 # Merge config file with command line arguments
-print('\n'*20)
+print('\n' * 20)
 
 if not args['identifier']:
     print('Warning! Identifier was not set, using the identifier "default"')
@@ -178,10 +181,10 @@ if not config['test_images']:
     config['test_images'] = find_images(Path(config['data_dir']).absolute() / 'test')
 
 if config['debug']:
-    print('\n' + '-'*55)
+    print('\n' + '-' * 55)
     print('            WARNING! "debug" mode is set.')
     print('            won\'t store weights or logs.')
-    print('-'*55 + '\n')
+    print('-' * 55 + '\n')
 
 # Print final form of configuration file 
 print('\n{:<20} | {}'.format('Argument', 'Value'))
@@ -208,4 +211,4 @@ if config['memory']:
                                                             [tf.config.experimental.VirtualDeviceConfiguration(
                                                                 memory_limit=config['memory'])])
 
-print('\n'*5)
+print('\n' * 5)

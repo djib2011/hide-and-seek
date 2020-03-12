@@ -167,31 +167,6 @@ available_models = {'hns_small': hide_and_seek_small,
                     'hns_large': hide_and_seek_large,
                     'hns_resnet': hide_and_seek_resnet}
 
-
-#if __name__ == '__main__':
-
-    # for mnist
-    # input_shape = (28, 28, 1)
-    # num_classes = 10
-    # model = hide_and_seek_small(input_shape, num_classes)
-
-    # for cifar10
-    #input_shape = (32, 32, 3)
-    #num_classes = 10
-    #model = hide_and_seek_small(input_shape, num_classes)
-
-    # for animals
-    # input_shape = (192, 192, 3)
-    # num_classes = 398
-
-    # large
-    # model = hide_and_seek_large(input_shape, num_classes)
-
-    # resnet
-    # model = hide_and_seek_resnet(input_shape, num_classes)
-
-    #model.summary()
-
 if __name__ == '__main__': 
 
     for name, model_func in available_models.items():
