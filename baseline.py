@@ -52,6 +52,8 @@ if __name__ == '__main__':
 
     if config['config'] == 'mnist':
         test_set = utils.datagen.mnist(batch_size=batch_size, set='test')
+    elif config['config'] == 'fashion':
+        test_set = utils.datagen.fashion(batch_size=batch_size, set='test', channels=channels)
     elif config['config'] == 'cifar10':
         test_set = utils.datagen.cifar10(batch_size=batch_size, set='test', channels=channels)
     elif config['config'] == 'cifar100':

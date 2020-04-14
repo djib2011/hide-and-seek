@@ -32,7 +32,19 @@
     baseline = results/mnist/seeker/final/baseline.txt
     image_size = 28
     channels = 1
-    train_images = 50000
+    train_images = 60000
+    test_images = 10000
+    num_classes = 10
+    max_epochs = 10
+    batch_size = 256
+    gpu = 0
+    model = hns_small
+    memory = 1024
+
+[fashion]
+    image_size = 28
+    channels = 1
+    train_images = 60000
     test_images = 10000
     num_classes = 10
     max_epochs = 10

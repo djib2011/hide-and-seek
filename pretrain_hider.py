@@ -166,8 +166,11 @@ if __name__ == '__main__':
     num_classes = config['num_classes']
 
     if config['config'] == 'mnist':
-        train_set = utils.datagen.mnist_train(batch_size=batch_size, split='train')
-        test_set = utils.datagen.mnist_test(batch_size=batch_size, split='test')
+        train_set = utils.datagen.mnist(batch_size=batch_size, split='train')
+        test_set = utils.datagen.mnist(batch_size=batch_size, split='test')
+    elif config['config'] == 'fashion':
+        train_set = utils.datagen.fashion(batch_size=batch_size, split='train')
+        test_set = utils.datagen.fashion(batch_size=batch_size, split='test')
     elif config['config'] == 'cifar10':
         train_set = utils.datagen.cifar10(batch_size=batch_size, split='train', channels=channels)
         test_set = utils.datagen.cifar10(batch_size=batch_size, split='test', channels=channels)

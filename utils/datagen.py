@@ -95,6 +95,40 @@ def mnist(batch_size=64, split='train'):
     return data
 
 
+def fashion(batch_size=64, split='train'):
+    """
+    Generator that loads the fashion mnist dataset.
+    :param batch_size: The desired batch size.
+    :param split: Which set to load, "train" or "test".
+    :return: a tf.data.Dataset that generates mnist images
+    """
+
+    # Load train/test set images
+    if split == 'train':
+        (images, labels), (_, _) = tf.keras.datasets.mnist.load_data()
+        images = images.reshape((60000, 28, 28, 1))
+    elif split == 'test':
+        (_, _), (images, labels) = tf.keras.datasets.mnist.load_data()
+        images = images.reshape((10000, 28, 28, 1))
+    else:
+        raise ValueError('Invalid value for argument "set". Should be either "train" or "test".')
+
+    # Normalize pixel values to be between 0 and 1
+    images = images.astype(np.float32) / 255.0
+
+    # One-hot encode the labels
+    labels = tf.keras.utils.to_categorical(labels, 10)
+
+    # Create tf.Dataset
+    data = tf.data.Dataset.from_tensor_slices((images, labels))
+    data = data.shuffle(buffer_size=len(images))
+    data = data.repeat()
+    data = data.batch(batch_size=batch_size)
+    data = data.prefetch(buffer_size=1)
+
+    return data
+
+
 def cifar10(batch_size=64, split='train', channels=3):
     """
     Generator that loads the cifar10 dataset.
