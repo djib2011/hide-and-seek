@@ -146,7 +146,8 @@ class HNSTrainer:
 
                     monitor.flush()
 
-                    self.model.save_weights(weight_dir + '/interm_weights_a_{:.2f}.h5'.format(self.a))
+                    if not self.debug:
+                        self.model.save_weights(weight_dir + '/interm_weights_a_{:.2f}.h5'.format(self.a))
                     self.a -= 0.05
 
                     if self.a <= 0.05:

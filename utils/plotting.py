@@ -18,7 +18,8 @@ def load_and_process_epoch_logs_from_dir(log_dir, extend_to_length=100):
 
     def read_hns_epoch_logs_old(path_to_events_file):
         logs = {'Average loss per epoch': [],
-                'Validation accuracy': []}
+                'Validation accuracy': [],
+		'Interpretability': []}
 
         for e in tf.compat.v1.train.summary_iterator(path_to_events_file):
             for v in e.summary.value:

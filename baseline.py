@@ -51,11 +51,11 @@ if __name__ == '__main__':
     num_classes = config['num_classes']
 
     if config['config'] == 'mnist':
-        test_set = utils.datagen.mnist(batch_size=batch_size, set='test')
+        test_set = utils.datagen.mnist(batch_size=batch_size, split='test')
     elif config['config'] == 'fashion':
-        test_set = utils.datagen.fashion(batch_size=batch_size, set='test', channels=channels)
+        test_set = utils.datagen.fashion(batch_size=batch_size, split='test')
     elif config['config'] == 'cifar10':
-        test_set = utils.datagen.cifar10(batch_size=batch_size, set='test', channels=channels)
+        test_set = utils.datagen.cifar10(batch_size=batch_size, split='test', channels=channels)
     elif config['config'] == 'cifar100':
         test_set = utils.datagen.cifar100(batch_size=batch_size, split='test', channels=channels)
     else:

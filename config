@@ -42,6 +42,7 @@
     memory = 1024
 
 [fashion]
+    baseline = results/fashion/seeker/default/baseline.txt
     image_size = 28
     channels = 1
     train_images = 60000
