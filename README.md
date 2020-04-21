@@ -20,7 +20,46 @@ suggest.
 
 ## Quick start:
 
+To run one of the preset experiments (e.g. the *mnist* one, as defined in the `config` file):
+
+```
+python collaborative_training.py --config mnist
+```
+
+The above command will train an HNS model from scratch on the MNIST dataset, without a baseline, and store the results and logs under `<...>/mnist/hns/default`. The baseline is required for measuring *Fidelity*, *FIR* and *FII*. To obtain a baseline and measure those metrics, we need to first train the *Seeker* (i.e. the classifier).
+
+```
+python pretrain_seeker.py --config mnist 
+python baseline.py --config mnist
+python collaborative_training.py --config mnist --baseline results/mnist/seeker/default/baseline.txt 
+```
+
+The first command pretrains the *Seeker*, evaluates the *Seeker* and stores the baseline performance and the third trains the HNS model. Since the baseline was passed as an argument, the logs will also depict all *Fidelity*-based metrics. The path to the baselien was the default one.
+
+To pretrain the components of the HNS model:
+
+```
+python pretrain_seeker.py --config mnist
+python pretrain_hider.py --config mnist 
+python collaborative_training.py --config mnist --hider_weights weights/mnist/hider/default/best_weights.h5 --seeker_weights weights/mnist/seeker/default/best_weights.h5
+```
+
+The first command pretrains the *Seeker*, the second pretrains the *Hider* and the last trains the HNS model with a pretrained *Hider* and *Seeker*. 
+
+To change parameters of the HNS model:
+
+```
+python collaborative_training.py --config mnist --stochastic --sa --rate 0.1 --alpha 0.7
+```
+
+The above command uses a stochastic threshold, with a *slope-annealing* gradient estimator (with a rate of 0.1) and a constant loss-regulator of 0.7 (i.e. no adaptive weighting).
+
+
 ## Requirements:
+
+The development and initial testing was conducted on a Ubuntu 18.04 computer with a 6GB GeForce GTX 1060 graphics card, using Python 3.6.9. Experiments were conducted on a Ubuntu 16.04 computer with two graphics cards: a 12Gb GeForce GTX 1080 Ti and a 12Gb Titan Xp, using Python 3.5.2.
+
+The library stack was kept consistent between the two setups and can be seen in the `requirements.txt`. Most notably, the HNS framework requires TensorFlow 2.0 and above (it was developed using the pre-alpha release of tf2).
 
 ## Idea and Theory:
 
@@ -97,12 +136,50 @@ Some research questions that arose:
     - Deterministic
     - Stochastic
     
-4. Evaluate the HND model on the MNIST dataset.
+4. Evaluate the HNS model on the MNIST dataset.
 
-5. Evaluate the HND model on the CIFAR10 dataset.
+5. Evaluate the HNS model on the CIFAR10 dataset.
 
-6. Evaluate the HND model on the CIFAR100 dataset.
+6. Evaluate the HNS model on the CIFAR100 dataset.
 
+7. Evaluate the HNS model on the Fashion-MNIST dataset.
 
 ## Detailed Guide :
 
+The detailed guide will consist of three parts: running preset experiments, running custom experiments through the CLI and detailed reference of the different modules. 
+
+### Preset experiments
+
+The easiest way to run experiments is to preset their parameters in the `config` file. Some of those parameters include the location of the data, the size and number of the images, the batch size, the number of classes etc. Not all parameters are mandatory. An example entry is the following:
+
+```
+[example]
+    data_dir = /path/to/data/dir                      # directory where data is located
+    hider_weights = /path/to/hider/weights.h5         # path to a valid "hider" model weights file
+    seeker_weights = /path/to/seeker/weights.h5       # path to a valid "seeker" model weights file
+    image_size = 256                                  # desired image dimensions: images will be resized to (256, 256)
+    channels = 3                                      # number of channels (3 for RGB, 1 for grayscale)
+    train_images = 10000                              # number of images in the training set (optional but recommended)
+    test_images = 5000                                # number of images in the test set (optional but recommended)
+    num_classes = 13                                  # number of classes (optional but recommended)
+    max_epochs = 13                                   # maximum number of epochs to train the model
+    batch_size = 64                                   # what batch size to use
+    gpu = 1                                           # which gpu to use to train the model (for multi-gpu environments)
+    model = hns_large                                 # select size of model to use, 'small' and 'large' available
+```
+
+By adding the *example* configuration in the `config` file, you can call this through the CLI:
+
+```
+python collaborative_training.py --config example
+```
+
+instead of 
+
+```
+python collaborative_training.py --data_dir /path/to/data/dir \
+                                 --hider_weights /path/to/hider/weights.h5 \
+                                 --seeker_weights /path/to/seeker/weights.h5 \
+                                 --image_size 256 \
+                                 ...
+```
