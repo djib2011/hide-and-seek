@@ -94,7 +94,7 @@ We examined two types of thresholds: a deterministic one and a stochastic.
 The first sets all values larger than 0.5 to 1 and the rest to 0. The second does the same based on a probability. For example if it takes an input of 0.7, it will output 1 with a probability of 0.7 and 0.3 otherwise.
 The previous layer to both of these needs to be sigmoid-activated to normalize its output to [0, 1]. These units will be referred to as **Binray Deterministic Neurons (BDN)** or **Binary Stochastic Neurons (BSN)** depending on the thresholding technique they employ. 
 
-An issue that arises is how are we going to backpropagate the gradients through the binary layer. For BDNs, one choice is to just ignore the threshold. This is a bit trickier in the case of BSNs, where we need to *estimate* the gradient. More details for this are available in the paper. We examine four different gradient estimators: *Streight-Through-v1 (ST1), Streight-Through-v2 (ST2), Slope-Annealing and REINFORCE*.
+An issue that arises is how are we going to backpropagate the gradients through the binary layer. For BDNs, one choice is to just ignore the threshold. This is a bit trickier in the case of BSNs, where we need to *estimate* the gradient. More details for this are available in the paper. We examine four different gradient estimators: *Streight-Through-v1 (ST1), Streight-Through-v2 (ST2), Slope-Annealing* and *REINFORCE*.
 
 ### Seeker
 
@@ -347,3 +347,81 @@ The default values are:
 
 Note that out of these `data_dir`, `image_size` and `channels` are **mandatory** (i.e. they need to be specified), while 
 `train_images`, `test_images` and `num_classes` can be infered upon if using a custom dataset.
+
+### Custom Use of Modules
+
+#### networks
+
+This module contains the *Hider*, *Seeker* and *Hide-and-Seek* models. `networks/hide.py` contains two *Hider* models: `hider_small` and `hider_large`. E.g.
+
+```python
+from netwokrs.hide import hider_small
+
+input_shape = (32, 32, 1)
+hider = hider_small(input_shape)  # a keras model
+
+hider.summary()  
+```
+
+`networks/seeker.py` contains three *Seeker* models: `seeker_small`, `seeker_large` and `seeker_resnet`. 
+
+```python
+from netwokrs.hide import seeker_small
+
+input_shape = (32, 32, 1)
+num_classes = 13
+
+seeker = seeker_small(input_shape, num_classes)  # a keras model
+
+seeker.summary()
+```
+
+`networks/hns.py` contains three *Hide-and-Seek* models: `hide_and_seek_small`, `hide_and_seek_large` and `hide_and_seek_resnet`.
+
+```python
+from networks.hns import hide_and_seek_small
+
+input_shape = (32, 32, 1)
+num_classes = 13
+binary_type='stochastic'        # binary or stochastic
+stochastic_estimator='sa'       # slope annealing estimator (only relevany for 'stochastic')
+slope_increase_rate=0.000001    # slope increase rate per iteration (only relevant for 'sa' estimator)
+
+hns = hide_and_seek_small(num_classes, binary_type, stochastic_estimator, slope_increase_rate)
+
+hns.summary()
+```
+
+#### Top-level modules
+
+The previous models can be trained through classes availale in the relevant top-level modules. In the case of the *Hider*:
+
+```python
+from pretrain_hider import HiderTrainer
+
+hider = ...  # a hider model
+train_set = ... # training set
+test_set = ... # test_set
+
+weight_dir = 'weights/custom_hider_training/'  # path for weights
+log_dir = 'logs/custom_hider_training'  # path for logs
+optimizer = None  # if None, use Adam
+loss_function = None  # if None, use Binary Crossentropy
+debug = False  # if True, don't store any weights or logs
+training_steps = 1000  # how many iterations for one epoch on the training set (i.e. num_samples // batch_size + 1)
+test_steps = 5000  # how many iterations for one epoch on the test set (i.e. num_samples // batch_size + 1)
+
+# Define a trainer
+trainer = HiderTrainer(hider, weight_dir, log_dir, optimizer, loss_function, debug)
+
+# Train the model
+trainer.train(train_set, training_steps, max_epochs=10, test_data=test_set, validation_steps=test_steps)
+
+# Evaluate the model
+trainer.evaluate(test_set, test_steps)
+
+# Save sample images
+x = next(test_set)  # a batch of images
+trainer.save_sample_images(x, directory='where/to/save/images/')
+```
+
