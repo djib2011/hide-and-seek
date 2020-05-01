@@ -146,7 +146,74 @@ Some research questions that arose:
 
 ## Detailed Guide :
 
-The detailed guide will consist of three parts: running preset experiments, running custom experiments through the CLI and detailed reference of the different modules. 
+The detailed guide will consist of four parts. The first will focus on a description of the top-level modules and what each does. The remaining three will focus on 3 ways for running each module: preset experiments, custom experiments through the CLI and using the modules independently.
+
+### Description of Top-Level Modules
+
+There are five top-level modules which can be used for training and evaluating the HnS model on any given dataset.
+
+- `pretrain_hider.py`: This module, as its name implies, is meant to train a *Hider* from scratch.
+- `pretrain_seeker.py`: This module, likewise, is meant to train a *Seeker* from scratch. **Note**: This step is necessary for generating a baseline, which is required to measure the Fidelity, FIR and FII of an HnS model.
+- `baseline.py`: This module generates the baseline from a pretrained Seeker. **Note**: This requires a pre-trained seeker and is required to measure the Fidelity, FIR and FII of an HnS model.
+- `collaborative_training.py`: This is the main module. It is used to train an HnS model, either from scratch or from a pretrained Hider/Seeker. **Note**: In order to measure the Fidelity, FIR and FII the baseline must first be generated.
+- `evaluation.py`: This module evaluates a trained HnS model.
+
+Additionally we'll provide a description of the top-level directories: 
+
+- `analysis/`: Contains Jupyter Notebooks analyzing the experiments
+- `utils/`: Contains several modules necessary for building, training and evaluaing HnS models.
+- `networks/`: Contain modules with the network architecures we used.
+- `logs/`: Store log files after running the experiments.
+- `results/`: Stores the results from `baseline.py` and `evaluation.py`.
+- `weights/`: Stores the weights of the models during and after training.
+
+The latter three follow the following directory structure:
+
+```
+logs
+├── config
+│   ├── model_type
+│   │   ├── identifier
+│   │   │   ├── batch
+│   │   │   │   └── events.out.file
+│   │   │   └── epoch
+│   │   │       └── events.out.file
+...
+```
+
+For example:
+
+```
+logs
+├── cifar10
+│   ├── hider
+│   │   ├── default
+│   │   │   ├── batch
+│   │   │   │   └── events.out.tfevents.1565254564.pinkfloyd.deep.islab.ntua.gr.19339.317.v2
+│   │   │   └── epoch
+│   │   │       └── events.out.tfevents.1565254564.pinkfloyd.deep.islab.ntua.gr.19339.325.v2
+|   |   ...
+│   ├── hns
+│   │   ├── deterministic
+│   │   │   ├── full_training_10
+│   │   │   │   ├── 1
+│   │   │   │   │   ├── batch
+│   │   │   │   │   │   └── events.out.tfevents.1581436099.pinkfloyd.deep.islab.ntua.gr.25563.613.v2
+│   │   │   │   │   └── epoch
+│   │   │   │   │       └── events.out.tfevents.1581436099.pinkfloyd.deep.islab.ntua.gr.25563.621.v2
+│   |   |   ...
+|   |   ├── stochastic
+|   |   |   ├── st1
+|   |   |   |   ├── full_training_10
+|   |   |   |   |   ├── 1
+|   |   ...
+│   ├── seeker
+        └── final
+            ├── batch
+            │   └── events.out.tfevents.1568023158.pinkfloyd.deep.islab.ntua.gr.3237.172.v2
+            └── epoch
+                └── events.out.tfevents.1568023158.pinkfloyd.deep.islab.ntua.gr.3237.180.v2
+```
 
 ### Preset experiments
 
@@ -183,3 +250,100 @@ python collaborative_training.py --data_dir /path/to/data/dir \
                                  --image_size 256 \
                                  ...
 ```
+
+A more detailed description of the parameters is given in the next section. 
+
+### Running Custom Experiments
+
+This way uses the full power of the CLI, however all relevant parameters need to be specified during this step. These can be viewed by adding the argument `-h` or `--help` at the end of any script. For example:
+
+```
+python collaborative_training.py --help
+
+  -h, --help            show this help message and exit
+  --identifier IDENTIFIER
+                        Name of the current experiment, will be used to name
+                        the folders containing the logs and the weights
+  --config CONFIG       Name of a valid configuration from "config.txt"
+  --num_trainings NUM_TRAININGS
+                        How many times to train the model
+  --stochastic          Select if you want to use Binary Stochastic Neurons,
+                        instead of Deterministic ones.
+  --estimator ESTIMATOR
+                        Name of the gradient estimator. only relevant for
+                        stochastic neurons
+  --rate RATE           Slope increase rate of Slope-Annealing estimator (only
+                        relevant for this estimator). How much the slope
+                        increases per epoch. E.g. "0.5" means that at the end
+                        of the first epoch the slope will be 50{'container':
+                        <argparse._ArgumentGroup object at 0x7fe610f1cd30>,
+                        'metavar': None, 'dest': 'rate', 'required': False,
+                        'type': 'float', 'default': None, 'choices': None,
+                        'nargs': None, 'const': None, 'help': 'Slope increase
+                        rate of Slope-Annealing estimator (only relevant for
+                        this estimator). How much the slope increases per
+                        epoch. E.g. "0.5" means that at the end of the first
+                        epoch the slope will be 50% larger than what it
+                        started.', 'option_strings': ['--rate'], 'prog':
+                        'collaborative_training.py'}rger than what it started.
+  --monitor MONITOR     What loss to monitor: "classification" or "total".Only
+                        relevant for adaptive loss weighting.
+  --patience PATIENCE   How many iterations to check for a significant
+                        changein classification loss before reducing a. Only
+                        relevant for adaptive loss weighting.
+  --alpha ALPHA         Value for alpha. Should be between 0 and 1. Higher
+                        values cause the "classification loss" to contribute
+                        more to the total loss, while lower values cause the
+                        "mask loss" to contribute more. If not specified, an
+                        adaptive loss weighting will occur.
+  --data_dir DATA_DIR   Directory where training data is located
+  --image_size IMAGE_SIZE
+                        Image dimensions
+  --channels CHANNELS   Number of channels (3 for rgb, 1 for grayscale)
+  --num_classes NUM_CLASSES
+                        Number of classes in the dataset
+  --train_images TRAIN_IMAGES
+                        How many images you want to train on. Usually set to
+                        the training set size. (optional)
+  --test_images TEST_IMAGES
+                        How many images you want to test on; usually set to
+                        the test set size. (optional)
+  --baseline BASELINE   Location of a file containing the baseline for the
+                        specific dataset. Required for computation of
+                        Fidelityand FIR.
+  --model MODEL         Type of model to use. Available: "hns_small",
+                        "hns_large" and "hns_resnet"
+  --hider_weights HIDER_WEIGHTS
+                        Location of a valid pretrained "hider" weights file
+                        (optional but recommended)
+  --seeker_weights SEEKER_WEIGHTS
+                        Location of a valid pretrained "seeker" weights file
+                        (optional)
+  --batch_size BATCH_SIZE
+                        Batch size
+  --max_epochs MAX_EPOCHS
+                        Maximum number of epochs. Adaptive loss weighting may
+                        cause the network to converge faster.
+  --gpu GPU             Which gpu to use. Only relevant for multi-gpu
+                        enviromnemts.
+  --memory MEMORY       How much memory to allocate on a gpu
+  --debug               If set to True, no weights or logs will be stored for
+                        the models. It is intended for seeing if a script runs
+                        properly, without generating empty logs or useless
+                        weights.
+  --evaluate            Choose whether or not to evaluate the modelafter the
+                        training is completed.
+```
+
+The default values are:
+
+```
+'batch_size': 64, 'max_epochs': 10, 'gpu': 0, 'model': 'hns_small', 'config': None, 'data_dir': None,
+'image_size': None, 'channels': None, 'num_classes': None, 'hider_weights': None, 'seeker_weights': None,
+'train_images': None, 'test_images': None, 'stochastic': False, 'estimator': 'st1', 'patience': 100,
+'alpha': None, 'monitor': 'classification', 'rate': 0.5, 'debug': False, 'num_trainings': 1, 'memory': None,
+'evaluate': False, 'baseline': None
+```
+
+Note that out of these `data_dir`, `image_size` and `channels` are **mandatory** (i.e. they need to be specified), while 
+`train_images`, `test_images` and `num_classes` can be infered upon if using a custom dataset.
