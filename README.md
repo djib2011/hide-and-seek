@@ -434,21 +434,20 @@ To use the *Seeker*:
 ```python
 from pretrain_seeker import SeekerTrainer
 
-hider = ...  # a hider model
 seeker = ...  # a seeker model
 train_set = ... # training set
 test_set = ... # test_set
 
-weight_dir = 'weights/custom_hider_training/'  # path for weights
-log_dir = 'logs/custom_hider_training'         # path for logs
-optimizer = None                               # if None, use Adam
-loss_function = None                           # if None, use Binary Crossentropy
-debug = False                                  # if True, don't store any weights or logs
+weight_dir = 'weights/custom_seeker_training/'  # path for weights
+log_dir = 'logs/custom_seeker_training'         # path for logs
+optimizer = None                                # if None, use Adam
+loss_function = None                            # if None, use Binary Crossentropy
+debug = False                                   # if True, don't store any weights or logs
 
-training_steps = 1000                          # how many iterations for one epoch on the 
-                                               # training set (i.e. num_samples // batch_size + 1)
-test_steps = 5000                              # how many iterations for one epoch on the 
-                                               # test set (i.e. num_samples // batch_size + 1)
+training_steps = 1000                           # how many iterations for one epoch on the 
+                                                # training set (i.e. num_samples // batch_size + 1)
+test_steps = 5000                               # how many iterations for one epoch on the 
+                                                # test set (i.e. num_samples // batch_size + 1)
 
 # Define a trainer
 trainer = SeekerTrainer(seeker, weight_dir, log_dir, optimizer, loss_function, debug)
@@ -469,12 +468,12 @@ hns = ...  # a HnS model
 train_set = ... # training set
 test_set = ... # test_set
 
-weight_dir = 'weights/custom_hider_training/'  # path for weights
-log_dir = 'logs/custom_hider_training'         # path for logs
-optimizer = None                               # if None, use Adam
-loss_function = None                           # if None, use Binary Crossentropy
-debug = False                                  # if True, don't store any weights or logs
-baseline = 'path/to/baseline/file.txt'         # if None, it can't measure Fidelity, FIR and FII
+weight_dir = 'weights/custom_hns_training/'  # path for weights
+log_dir = 'logs/custom_hns_training'         # path for logs
+optimizer = None                             # if None, use Adam
+loss_function = None                         # if None, use Binary Crossentropy
+debug = False                                # if True, don't store any weights or logs
+baseline = 'path/to/baseline/file.txt'       # if None, it can't measure Fidelity, FIR and FII
 
 # Training parameters
 training_steps = 1000       # how many iterations for one epoch on the 
@@ -493,7 +492,7 @@ save_weights_every = False  # if we add a value the model's weights will be save
 
 
 # Define a trainer
-trainer = HNSTrainer(hider, weight_dir, log_dir, optimizer, loss_function, debug, baseline)
+trainer = HNSTrainer(hns, weight_dir, log_dir, optimizer, loss_function, debug, baseline)
 
 # Train the model
 trainer.train(train_set, training_steps, max_epochs=max_epochs, test_data=test_set, validation_steps=test_steps)
