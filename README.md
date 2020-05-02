@@ -404,12 +404,16 @@ train_set = ... # training set
 test_set = ... # test_set
 
 weight_dir = 'weights/custom_hider_training/'  # path for weights
-log_dir = 'logs/custom_hider_training'  # path for logs
-optimizer = None  # if None, use Adam
-loss_function = None  # if None, use Binary Crossentropy
-debug = False  # if True, don't store any weights or logs
-training_steps = 1000  # how many iterations for one epoch on the training set (i.e. num_samples // batch_size + 1)
-test_steps = 5000  # how many iterations for one epoch on the test set (i.e. num_samples // batch_size + 1)
+log_dir = 'logs/custom_hider_training'         # path for logs
+optimizer = None                               # if None, use Adam
+loss_function = None                           # if None, use Binary Crossentropy
+debug = False                                  # if True, don't store any weights or logs
+
+
+training_steps = 1000                          # how many iterations for one epoch on the 
+                                               # training set (i.e. num_samples // batch_size + 1)
+test_steps = 5000                              # how many iterations for one epoch on the 
+                                               # test set (i.e. num_samples // batch_size + 1)
 
 # Define a trainer
 trainer = HiderTrainer(hider, weight_dir, log_dir, optimizer, loss_function, debug)
@@ -417,7 +421,7 @@ trainer = HiderTrainer(hider, weight_dir, log_dir, optimizer, loss_function, deb
 # Train the model
 trainer.train(train_set, training_steps, max_epochs=10, test_data=test_set, validation_steps=test_steps)
 
-# Evaluate the model
+# Evaluate the model (reconstruction loss)
 trainer.evaluate(test_set, test_steps)
 
 # Save sample images
@@ -425,3 +429,81 @@ x = next(test_set)  # a batch of images
 trainer.save_sample_images(x, directory='where/to/save/images/')
 ```
 
+To use the *Seeker*:
+
+```python
+from pretrain_seeker import SeekerTrainer
+
+hider = ...  # a hider model
+seeker = ...  # a seeker model
+train_set = ... # training set
+test_set = ... # test_set
+
+weight_dir = 'weights/custom_hider_training/'  # path for weights
+log_dir = 'logs/custom_hider_training'         # path for logs
+optimizer = None                               # if None, use Adam
+loss_function = None                           # if None, use Binary Crossentropy
+debug = False                                  # if True, don't store any weights or logs
+
+training_steps = 1000                          # how many iterations for one epoch on the 
+                                               # training set (i.e. num_samples // batch_size + 1)
+test_steps = 5000                              # how many iterations for one epoch on the 
+                                               # test set (i.e. num_samples // batch_size + 1)
+
+# Define a trainer
+trainer = SeekerTrainer(seeker, weight_dir, log_dir, optimizer, loss_function, debug)
+
+# Train the model
+trainer.train(train_set, training_steps, max_epochs=10, test_data=test_set, validation_steps=test_steps)
+
+# Evaluate the model (only accuracy at this point)
+trainer.evaluate(test_set, test_steps)
+```
+
+To use the *HnS*:
+
+```python
+from collaborative_training import HNSTrainer
+
+hns = ...  # a HnS model
+train_set = ... # training set
+test_set = ... # test_set
+
+weight_dir = 'weights/custom_hider_training/'  # path for weights
+log_dir = 'logs/custom_hider_training'         # path for logs
+optimizer = None                               # if None, use Adam
+loss_function = None                           # if None, use Binary Crossentropy
+debug = False                                  # if True, don't store any weights or logs
+baseline = 'path/to/baseline/file.txt'         # if None, it can't measure Fidelity, FIR and FII
+
+# Training parameters
+training_steps = 1000       # how many iterations for one epoch on the 
+                            # training set (i.e. num_samples // batch_size + 1)
+test_steps = 5000           # how many iterations for one epoch on the 
+                            # test set (i.e. num_samples // batch_size + 1)
+
+max_epochs = 10             # maximum number of epochs
+adaptive_weighting = True   # adapt the value of alpha during training
+alpha = 1.                  # constant value of alpha (only relevant for adaptive_weighting=False)
+a_patience = 100            # steps to monitor loss stagnation before dropping alpha
+loss_to_monitor = 'total'   # can be either 'total' for total loss or 'classification' for classification_loss
+update_every = 6            # after how many hours to print training update 
+save_weights_every = False  # if we add a value the model's weights will be saved every that amount of hours
+
+
+
+# Define a trainer
+trainer = HNSTrainer(hider, weight_dir, log_dir, optimizer, loss_function, debug, baseline)
+
+# Train the model
+trainer.train(train_set, training_steps, max_epochs=max_epochs, test_data=test_set, validation_steps=test_steps)
+              adaptive_weighting=adaptive_weighting, a_patience=a_patience, loss_to_monitor=loss_to_monitor, 
+              update_every=update_every, save_weights_every=save_weights_every)
+              
+# Evaluate the model (only accuracy at this point)
+trainer.evaluate(test_set, test_steps)
+
+# Save sample images
+x, y = next(test_set)  # a batch of images and labels
+trainer.save_sample_images(x, y directory='where/to/save/images/')
+```
