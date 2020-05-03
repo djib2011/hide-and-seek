@@ -366,7 +366,7 @@ hider.summary()
 `networks/seeker.py` contains three *Seeker* models: `seeker_small`, `seeker_large` and `seeker_resnet`. 
 
 ```python
-from netwokrs.hide import seeker_small
+from netwokrs.seek import seeker_small
 
 input_shape = (32, 32, 1)
 num_classes = 13
@@ -390,6 +390,35 @@ slope_increase_rate=0.000001    # slope increase rate per iteration (only releva
 hns = hide_and_seek_small(num_classes, binary_type, stochastic_estimator, slope_increase_rate)
 
 hns.summary()
+```
+
+To transfer weights from a *Hider* and/or *Seeker* to an *HnS* model, you can use the `transfer_weights` function from `utils/training.py`
+
+```python
+from netwokrs.hide import hider_small
+from netwokrs.seek import seeker_small
+from networks.hns import hide_and_seek_small
+from utils.training import transfer_weights
+
+# Model parameters
+input_shape = (28, 28, 1)
+num_classes = 10
+
+# Location of pre-trained weights
+hider_weights = '/path/to/hider/weights.h5'
+seeker_weights = '/path/to/seeker/weights.h5'
+
+# Define models
+hider = hider_small(input_shape)
+seeker = seeker_small(input_shape, num_classes)
+hns = hide_and_seek_small(num_classes, binary_type='deterministic')
+
+# Load the weights
+hider.load_weights(hider_weights)
+seeker.load_weights(seeker_weights)
+
+# Transfer the weights from the Hider and the Seeker to the HnS
+transfer_weights(hns, pretrained_hider=hider, pretrained_seeker=seeker)
 ```
 
 #### Top-level modules
@@ -506,3 +535,7 @@ trainer.evaluate(test_set, test_steps)
 x, y = next(test_set)  # a batch of images and labels
 trainer.save_sample_images(x, y directory='where/to/save/images/')
 ```
+
+#### utils
+
+`utils/` consists of several modules that contain the lower-level functionality of HnS. More specifically, `custom_ops.py` contains the thresholding operations that convert a real number in [0, 1] to binary, along with their gradient estimators. `custom_layers.py` consists of two custom keras layers, `BinaryDeterministic` and `BinaryStochastic`, that are used in the models. `datagen.py` includes functions that build `tf.data.Dataset` generators for baseline and custom image datasets. `training.py` contains two classes hat help during training: `MetricMonitor` is the class that makes the adaptive weighting scheme possible, as it monitors if a given metric fluctuates above a desired degree from its average value, over a number of training iterations; `WeightFailsafe` stores the model's weights if the training loop is terminated; `transfer_weights` transfers weights from a pretrained *Hider* and/or *Seeker* to an *HnS* Model. `options.py` is an auxiliary module built using `argparse`, that handles all CLI related tasks. Finally, `plotting.py` includes over a dozen functions for reading and plotting logs; these are used extensively in the `analysis/` notebooks.
