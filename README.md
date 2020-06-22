@@ -4,19 +4,9 @@
 ### by Thanos Tagaris and Andreas Stafylopatis
 
 Abstract:
-> Recent breakthroughs in Deep Learning have led to a meteoric rise in the popularity of Neural Networks 
-in the scientific world. Their adoption in various sectors of industry, however, has been much slower. 
-This can mainly be attributed to the lack of transparency in Neural Networks and the lack of trust this 
-entails to their end users. A prevailing disposition regarding interpretability in AI is the so-called 
-*Fidelity-Interpretability tradeoff*, which implies that there is a tradeoff between the performance 
-of a model and its interpretability. This study explores a framework for creating explainable Neural Networks, 
-through the collaborative training of two networks, one trained for classification and one aiming at increasing 
-its interpretability. The goal of this technique is to train a model with the highest possible degree of 
-interpretability without sacrificing its performance. The experimental study involved image classification 
-on 3 datasets: MNIST, CIFAR10 and an ImageNet derivative. Results prove that interpretable Convolutional 
-Neural Networks could be trained on all the aforementioned datasets, without reduction in performance. 
-Furthermore, evidence indicates that the aforementioned tradeoff is not as steep as related research might 
-suggest. 
+> Lack of transparency has been the Achilles heal of Neural Networks and their wider adoption in industry. Despite significant interest this shortcoming has not been adequately addressed. This study proposes a novel framework called Hide-and-Seek (HnS) for training Interpretable Neural Networks and establishes a theoretical foundation for exploring and comparing similar ideas. Extensive experimentation indicates that a high degree of interpretability can be imputed into Neural Networks, without sacrificing their predictive power.
+
+Submitted for publication in [Elsevier's Artificial Intelligence](https://www.journals.elsevier.com/artificial-intelligence). A preprint can be found [here](https://arxiv.org/abs/2005.00130).
 
 ## Quick start:
 
