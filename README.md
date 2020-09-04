@@ -6,7 +6,7 @@
 Abstract:
 > Lack of transparency has been the Achilles heal of Neural Networks and their wider adoption in industry. Despite significant interest this shortcoming has not been adequately addressed. This study proposes a novel framework called Hide-and-Seek (HnS) for training Interpretable Neural Networks and establishes a theoretical foundation for exploring and comparing similar ideas. Extensive experimentation indicates that a high degree of interpretability can be imputed into Neural Networks, without sacrificing their predictive power.
 
-Submitted for publication in [Elsevier's Artificial Intelligence](https://www.journals.elsevier.com/artificial-intelligence). A preprint can be found [here](https://arxiv.org/abs/2005.00130).
+The publication can be found [here](https://arxiv.org/abs/2005.00130).
 
 ## Quick start:
 
