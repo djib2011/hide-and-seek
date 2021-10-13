@@ -38,7 +38,7 @@ nbformat==4.4.0
 networkx==2.3
 notebook==6.4.1
 numpy==1.17.1
-opencv-python==4.1.0.25
+opencv-python==4.2.0.32
 pandas==0.24.2
 pandocfilters==1.4.2
 parso==0.5.1
