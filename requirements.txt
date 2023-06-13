@@ -72,7 +72,7 @@ termcolor==1.1.0
 terminado==0.8.2
 testpath==0.4.2
 tf-estimator-nightly==1.14.0.dev2019060501
-tornado==6.0.3
+tornado==6.3.2
 tqdm==4.32.2
 traitlets==4.3.2
 wcwidth==0.1.7
